@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lime-50: #f5fbe6;
+  --color-lime-100: #e8f5c4;
+  --color-lime-200: #d3ec91;
+  --color-lime-300: #b8de55;
+  --color-lime-400: #a5d133;
+  --color-lime-500: #95C11E;
+  --color-lime-600: #6e9a10;
+  --color-lime-700: #547512;
+  --color-lime-800: #445d14;
+  --color-lime-900: #3a4f16;
+  --color-lime-950: #1e2b06;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
