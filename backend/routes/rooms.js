@@ -3,20 +3,25 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const sizeOf = require('image-size');
-const { Room, Seat } = require('../models');
+const { Room, Seat, Area } = require('../models');
 const upload = require('../middleware/upload');
 
 // List all rooms with seat count
 router.get('/', async (req, res) => {
   try {
     const rooms = await Room.findAll({
-      include: [{ model: Seat, as: 'seats', attributes: ['id'] }],
+      include: [
+        { model: Seat, as: 'seats', attributes: ['id'] },
+        { model: Area, as: 'areas', attributes: ['id'] },
+      ],
       order: [['name', 'ASC']],
     });
     const result = rooms.map(r => ({
       id: r.id,
       name: r.name,
       seatCount: r.seats.length,
+      hasAreas: r.areas.length > 0,
+      areaCount: r.areas.length,
       floorplan_image_path: r.floorplan_image_path,
       image_width: r.image_width,
       image_height: r.image_height,
@@ -32,7 +37,11 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const room = await Room.findByPk(req.params.id, {
-      include: [{ model: Seat, as: 'seats', order: [['seat_number', 'ASC']] }],
+      include: [
+        { model: Seat, as: 'seats' },
+        { model: Area, as: 'areas', order: [['sort_order', 'ASC']] },
+      ],
+      order: [[{ model: Seat, as: 'seats' }, 'seat_number', 'ASC']],
     });
     if (!room) return res.status(404).json({ error: 'Zimmer nicht gefunden' });
     res.json(room);

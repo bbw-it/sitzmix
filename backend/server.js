@@ -18,8 +18,9 @@ app.use('/api', require('./routes/students'));
 app.use('/api', require('./routes/rules'));
 app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api', require('./routes/seats'));
+app.use('/api', require('./routes/areas'));
 app.use('/api/generator', require('./routes/generator'));
-app.use('/api/settings', require('./routes/settings'));
+app.use('/api', require('./routes/exportImport'));
 
 // Health check
 app.get('/api/health', (req, res) => {

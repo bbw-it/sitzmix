@@ -30,8 +30,9 @@ COPY backend/ ./
 # Gebautes Frontend in backend/public kopieren
 COPY --from=frontend-build /app/frontend/dist ./public
 
-# Uploads-Verzeichnis erstellen
+# Uploads-Verzeichnis erstellen + Seed-Bilder kopieren
 RUN mkdir -p /app/uploads
+COPY database/seed/ /app/uploads/
 
 # Port
 EXPOSE 3001

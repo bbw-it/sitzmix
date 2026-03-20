@@ -19,6 +19,8 @@ export default function GeneratorPage() {
   const [roomName, setRoomName] = useState('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fillMode, setFillMode] = useState('sequential');
+  const [personsPerArea, setPersonsPerArea] = useState(3);
 
   const openLightbox = () => setLightboxOpen(true);
 
@@ -40,7 +42,6 @@ export default function GeneratorPage() {
     }
   }, []);
 
-  // Escape schliesst die Lightbox, Fullscreen-Änderungen tracken
   useEffect(() => {
     if (!lightboxOpen) return;
     const handleKey = (e) => {
@@ -62,6 +63,10 @@ export default function GeneratorPage() {
     api.get('/rooms').then(res => setRooms(res.data)).catch(() => {});
   }, []);
 
+  const selectedRoomHasAreas = selectedRoom
+    ? rooms.find(r => r.id === parseInt(selectedRoom))?.hasAreas
+    : false;
+
   const generate = async () => {
     if (!selectedClass || !selectedRoom) {
       showToast('Bitte Klasse und Zimmer wählen', 'warning');
@@ -69,10 +74,15 @@ export default function GeneratorPage() {
     }
     setGenerating(true);
     try {
-      const res = await api.post('/generator/generate', {
+      const payload = {
         classId: parseInt(selectedClass),
         roomId: parseInt(selectedRoom),
-      });
+      };
+      if (selectedRoomHasAreas && fillMode === 'per_area') {
+        payload.fillMode = 'per_area';
+        payload.personsPerArea = personsPerArea;
+      }
+      const res = await api.post('/generator/generate', payload);
       setResult(res.data);
       if (res.data.warning) {
         showToast(res.data.warning, 'warning');
@@ -95,6 +105,7 @@ export default function GeneratorPage() {
     const room = rooms.find(r => r.id === parseInt(val));
     setRoomName(room?.name || '');
     setResult(null);
+    setFillMode(room?.hasAreas ? 'per_area' : 'sequential');
   };
 
   const downloadPng = async () => {
@@ -112,6 +123,60 @@ export default function GeneratorPage() {
     } catch {
       showToast('Fehler beim Export', 'error');
     }
+  };
+
+  const renderSeatingPlan = (sizeVariant = 'normal') => {
+    const circleClass = sizeVariant === 'large' ? 'w-11 h-11 text-xs' : 'w-9 h-9 text-[10px]';
+    const emptyCircleClass = sizeVariant === 'large' ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs';
+    const textClass = sizeVariant === 'large' ? 'text-xs' : 'text-[10px]';
+
+    return (
+      <>
+        {result.room.floorplan_image_path ? (
+          <img
+            src={`/api/uploads/${result.room.floorplan_image_path}`}
+            alt="Grundriss"
+            className={sizeVariant === 'large' ? 'block max-h-[88vh] w-auto' : 'w-full block'}
+            draggable={false}
+          />
+        ) : (
+          <div className={`aspect-video bg-gray-200 flex items-center justify-center text-gray-400 ${sizeVariant === 'large' ? 'min-w-[60vw]' : ''}`}>
+            Kein Grundriss vorhanden
+          </div>
+        )}
+
+        {result.assignments.map((a, i) => (
+          <div
+            key={i}
+            className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${a.xPosition}%`,
+              top: `${a.yPosition}%`,
+            }}
+          >
+            {a.student ? (
+              <>
+                <div
+                  className={`${circleClass} rounded-full flex items-center justify-center font-bold text-gray-800 shadow-md border-2 border-white`}
+                  style={{ backgroundColor: a.student.color }}
+                >
+                  {a.seatNumber}
+                </div>
+                <span className={`mt-0.5 ${textClass} font-semibold text-gray-800 bg-white/95 px-1.5 py-0.5 rounded shadow-sm text-center leading-tight overflow-visible`}>
+                  {a.student.name.includes(' ')
+                    ? <><span className="whitespace-nowrap">{a.student.name.split(' ')[0]}</span><br /><span className="font-normal whitespace-nowrap">{a.student.name.split(' ').slice(1).join(' ')}</span></>
+                    : a.student.name}
+                </span>
+              </>
+            ) : (
+              <div className={`${emptyCircleClass} rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-500 border-2 border-white shadow-sm`}>
+                {a.seatNumber}
+              </div>
+            )}
+          </div>
+        ))}
+      </>
+    );
   };
 
   return (
@@ -139,6 +204,47 @@ export default function GeneratorPage() {
             />
           </div>
         </div>
+
+        {/* Fill mode selector (only when room has areas) */}
+        {selectedRoomHasAreas && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <label className="block text-sm font-bold text-gray-900 mb-2">Belegungsregel</label>
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="fillMode"
+                  value="sequential"
+                  checked={fillMode === 'sequential'}
+                  onChange={() => setFillMode('sequential')}
+                  className="accent-lime-500"
+                />
+                <span className="text-sm">Alle Plätze auffüllen</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="fillMode"
+                  value="per_area"
+                  checked={fillMode === 'per_area'}
+                  onChange={() => setFillMode('per_area')}
+                  className="accent-lime-500"
+                />
+                <span className="text-sm">Pro Bereich:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={personsPerArea}
+                  onChange={(e) => setPersonsPerArea(parseInt(e.target.value) || 1)}
+                  disabled={fillMode !== 'per_area'}
+                  className="w-14 border border-gray-300 rounded-lg px-2 py-1 text-sm text-center disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                />
+                <span className="text-sm">Personen</span>
+              </label>
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 flex gap-3">
           <button
@@ -170,49 +276,7 @@ export default function GeneratorPage() {
             )}
           </div>
           <div ref={planRef} className="relative bg-gray-100 rounded-lg overflow-hidden cursor-zoom-in" onClick={openLightbox} title="Klicken zum Vergrössern">
-            {result.room.floorplan_image_path ? (
-              <img
-                src={`/api/uploads/${result.room.floorplan_image_path}`}
-                alt="Grundriss"
-                className="w-full block"
-                draggable={false}
-              />
-            ) : (
-              <div className="aspect-video bg-gray-200 flex items-center justify-center text-gray-400">
-                Kein Grundriss vorhanden
-              </div>
-            )}
-
-            {result.assignments.map((a, i) => (
-              <div
-                key={i}
-                className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  left: `${a.xPosition}%`,
-                  top: `${a.yPosition}%`,
-                }}
-              >
-                {a.student ? (
-                  <>
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-800 shadow-md border-2 border-white"
-                      style={{ backgroundColor: a.student.color }}
-                    >
-                      {a.seatNumber}
-                    </div>
-                    <span className="mt-0.5 text-[10px] font-semibold text-gray-800 bg-white/95 px-1.5 py-0.5 rounded shadow-sm text-center leading-tight overflow-visible">
-                      {a.student.name.includes(' ')
-                        ? <><span className="whitespace-nowrap">{a.student.name.split(' ')[0]}</span><br /><span className="font-normal whitespace-nowrap">{a.student.name.split(' ').slice(1).join(' ')}</span></>
-                        : a.student.name}
-                    </span>
-                  </>
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-500 border-2 border-white shadow-sm">
-                    {a.seatNumber}
-                  </div>
-                )}
-              </div>
-            ))}
+            {renderSeatingPlan('normal')}
           </div>
         </div>
       )}
@@ -230,7 +294,6 @@ export default function GeneratorPage() {
           className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center"
           onClick={(e) => { if (e.target === e.currentTarget) closeLightbox(); }}
         >
-          {/* Toolbar */}
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 py-3 bg-gradient-to-b from-black/60 to-transparent z-10">
             <h3 className="text-white font-semibold text-sm">{className} – {roomName}</h3>
             <div className="flex items-center gap-2">
@@ -261,52 +324,9 @@ export default function GeneratorPage() {
             </div>
           </div>
 
-          {/* Sitzplan gross */}
           <div className="relative max-w-[95vw] max-h-[90vh] overflow-auto">
             <div className="relative bg-gray-100 rounded-lg overflow-hidden">
-              {result.room.floorplan_image_path ? (
-                <img
-                  src={`/api/uploads/${result.room.floorplan_image_path}`}
-                  alt="Grundriss"
-                  className="block max-h-[88vh] w-auto"
-                  draggable={false}
-                />
-              ) : (
-                <div className="aspect-video bg-gray-200 flex items-center justify-center text-gray-400 min-w-[60vw]">
-                  Kein Grundriss vorhanden
-                </div>
-              )}
-
-              {result.assignments.map((a, i) => (
-                <div
-                  key={i}
-                  className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    left: `${a.xPosition}%`,
-                    top: `${a.yPosition}%`,
-                  }}
-                >
-                  {a.student ? (
-                    <>
-                      <div
-                        className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold text-gray-800 shadow-md border-2 border-white"
-                        style={{ backgroundColor: a.student.color }}
-                      >
-                        {a.seatNumber}
-                      </div>
-                      <span className="mt-0.5 text-xs font-semibold text-gray-800 bg-white/95 px-2 py-0.5 rounded shadow-sm text-center leading-tight overflow-visible">
-                        {a.student.name.includes(' ')
-                          ? <><span className="whitespace-nowrap">{a.student.name.split(' ')[0]}</span><br /><span className="font-normal whitespace-nowrap">{a.student.name.split(' ').slice(1).join(' ')}</span></>
-                          : a.student.name}
-                      </span>
-                    </>
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-gray-500 border-2 border-white shadow-sm">
-                      {a.seatNumber}
-                    </div>
-                  )}
-                </div>
-              ))}
+              {renderSeatingPlan('large')}
             </div>
           </div>
         </div>

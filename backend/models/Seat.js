@@ -7,6 +7,7 @@ const Seat = sequelize.define('Seat', {
   seat_number: { type: DataTypes.INTEGER, allowNull: false },
   x_position: { type: DataTypes.FLOAT, allowNull: false },
   y_position: { type: DataTypes.FLOAT, allowNull: false },
+  area_id: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
 }, {
   tableName: 'seats',
   timestamps: false,

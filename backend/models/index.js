@@ -4,7 +4,7 @@ const Student = require('./Student');
 const Rule = require('./Rule');
 const Room = require('./Room');
 const Seat = require('./Seat');
-const Setting = require('./Setting');
+const Area = require('./Area');
 
 // Associations
 Class.hasMany(Student, { foreignKey: 'class_id', as: 'students', onDelete: 'CASCADE' });
@@ -19,6 +19,12 @@ Rule.belongsTo(Student, { foreignKey: 'student_b_id', as: 'studentB' });
 Room.hasMany(Seat, { foreignKey: 'room_id', as: 'seats', onDelete: 'CASCADE' });
 Seat.belongsTo(Room, { foreignKey: 'room_id', as: 'room' });
 
+Room.hasMany(Area, { foreignKey: 'room_id', as: 'areas', onDelete: 'CASCADE' });
+Area.belongsTo(Room, { foreignKey: 'room_id', as: 'room' });
+
+Area.hasMany(Seat, { foreignKey: 'area_id', as: 'seats' });
+Seat.belongsTo(Area, { foreignKey: 'area_id', as: 'area' });
+
 module.exports = {
   sequelize,
   Class,
@@ -26,5 +32,5 @@ module.exports = {
   Rule,
   Room,
   Seat,
-  Setting,
+  Area,
 };

@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { Class, Student, Rule, Room, Seat } = require('../models');
+const { Class, Student, Rule, Room, Seat, Area } = require('../models');
 const { generateSeatingPlan } = require('../services/seatingAlgorithm');
 
 router.post('/generate', async (req, res) => {
   try {
-    const { classId, roomId } = req.body;
+    const { classId, roomId, fillMode, personsPerArea } = req.body;
 
     if (!classId || !roomId) {
       return res.status(400).json({ error: 'Klasse und Zimmer müssen gewählt werden' });
@@ -25,6 +25,11 @@ router.post('/generate', async (req, res) => {
       where: { class_id: classId },
     });
 
+    const areas = await Area.findAll({
+      where: { room_id: roomId },
+      order: [['sort_order', 'ASC']],
+    });
+
     const room = await Room.findByPk(roomId);
     if (!room) return res.status(404).json({ error: 'Zimmer nicht gefunden' });
 
@@ -41,7 +46,12 @@ router.post('/generate', async (req, res) => {
     const result = generateSeatingPlan(
       students.map(s => s.toJSON()),
       seats.map(s => s.toJSON()),
-      rules.map(r => r.toJSON())
+      rules.map(r => r.toJSON()),
+      {
+        areas: areas.map(a => a.toJSON()),
+        fillMode: fillMode || 'sequential',
+        personsPerArea: parseInt(personsPerArea) || 0,
+      }
     );
 
     res.json({
@@ -53,6 +63,7 @@ router.post('/generate', async (req, res) => {
         image_width: room.image_width,
         image_height: room.image_height,
       },
+      areas: areas.map(a => a.toJSON()),
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

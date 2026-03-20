@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import { ToastContext } from '../../App';
@@ -25,10 +25,23 @@ export default function ClassEditPage() {
   const [ruleB, setRuleB] = useState('');
   const [classId, setClassId] = useState(id);
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     if (id) loadClass();
+    else loadedRef.current = true;
   }, [id]);
+
+  // Warnung beim Verlassen mit ungespeicherten Änderungen
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  const markDirty = () => { if (loadedRef.current) setIsDirty(true); };
 
   const loadClass = async () => {
     try {
@@ -37,6 +50,8 @@ export default function ClassEditPage() {
       setStudents(res.data.students || []);
       setRules(res.data.rules || []);
       setClassId(res.data.id);
+      setIsDirty(false);
+      loadedRef.current = true;
     } catch {
       showToast('Fehler beim Laden', 'error');
     }
@@ -48,10 +63,12 @@ export default function ClassEditPage() {
       if (isNew && !classId) {
         const res = await api.post('/classes', { name });
         setClassId(res.data.id);
+        setIsDirty(false);
         navigate(`/classes/${res.data.id}`, { replace: true });
         showToast('Klasse erstellt');
       } else {
         await api.put(`/classes/${classId}`, { name });
+        setIsDirty(false);
         showToast('Gespeichert');
       }
     } catch {
@@ -121,7 +138,12 @@ export default function ClassEditPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Klasse bearbeiten</h1>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
+          {isDirty && (
+            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
+              Nicht gespeichert
+            </span>
+          )}
           <button
             onClick={() => navigate('/classes')}
             className="bg-lime-100 hover:bg-lime-200 text-lime-800 font-medium py-2.5 px-5 rounded-lg text-sm transition-colors"
@@ -131,7 +153,11 @@ export default function ClassEditPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-5 rounded-lg text-sm transition-colors disabled:opacity-50"
+            className={`font-medium py-2.5 px-5 rounded-lg text-sm transition-colors disabled:opacity-50 ${
+              isDirty
+                ? 'bg-lime-600 hover:bg-lime-700 text-white'
+                : 'bg-gray-900 hover:bg-gray-800 text-white'
+            }`}
           >
             {saving ? 'Speichern...' : 'Speichern'}
           </button>
@@ -143,7 +169,7 @@ export default function ClassEditPage() {
         <input
           type="text"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={e => { setName(e.target.value); markDirty(); }}
           className="w-full max-w-lg border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
           placeholder="z.B. Klasse 3A"
         />
