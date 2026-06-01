@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import api from '../../api/client';
+import { useStore } from '../../store/StoreProvider';
+import { buildExport } from '../../lib/exportImport';
 
 export default function ExportModal({ onClose }) {
+  const { listClasses, listRooms } = useStore();
   const [classes, setClasses] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [selectedClassIds, setSelectedClassIds] = useState(new Set());
@@ -11,11 +13,8 @@ export default function ExportModal({ onClose }) {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.get('/classes'), api.get('/rooms')])
-      .then(([c, r]) => {
-        setClasses(c.data);
-        setRooms(r.data);
-      });
+    setClasses(listClasses());
+    setRooms(listRooms());
   }, []);
 
   const toggleClass = (id) => {
@@ -55,12 +54,11 @@ export default function ExportModal({ onClose }) {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const params = {};
-      if (selectedClassIds.size > 0) params.classIds = [...selectedClassIds].join(',');
-      if (selectedRoomIds.size > 0) params.roomIds = [...selectedRoomIds].join(',');
-
-      const res = await api.get('/export', { params });
-      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const data = await buildExport({
+        classIds: [...selectedClassIds],
+        roomIds: [...selectedRoomIds],
+      });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

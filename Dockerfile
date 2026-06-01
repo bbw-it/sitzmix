@@ -1,45 +1,27 @@
 # ============================================
 # Stage 1: Frontend bauen
 # ============================================
-FROM node:22-alpine AS frontend-build
+FROM node:22-alpine AS build
 
-WORKDIR /app/frontend
+WORKDIR /app
 
 # Dependencies zuerst (Docker Layer-Cache)
 COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm install
+RUN npm ci
 
-# Frontend-Source kopieren und bauen
+# Source kopieren und bauen
 COPY frontend/ ./
 RUN npm run build
 
 # ============================================
-# Stage 2: Backend + gebautes Frontend
+# Stage 2: Statisches Hosting via Nginx
 # ============================================
-FROM node:22-alpine
+FROM nginx:alpine
 
-WORKDIR /app
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Backend-Dependencies installieren
-COPY backend/package.json backend/package-lock.json* ./
-RUN npm install --omit=dev
+EXPOSE 80
 
-# Backend-Source kopieren
-COPY backend/ ./
-
-# Gebautes Frontend in backend/public kopieren
-COPY --from=frontend-build /app/frontend/dist ./public
-
-# Uploads-Verzeichnis erstellen + Seed-Bilder kopieren
-RUN mkdir -p /app/uploads
-COPY database/seed/ /app/uploads/
-
-# Port
-EXPOSE 3001
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3001/api/health || exit 1
-
-# Start
-CMD ["node", "server.js"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1

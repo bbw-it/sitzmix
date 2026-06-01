@@ -1,32 +1,24 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 
 export default function RoomListPage() {
+  const { listRooms, createRoom, deleteRoom } = useStore();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const showToast = useContext(ToastContext);
 
   useEffect(() => {
-    loadRooms();
-  }, []);
-
-  const loadRooms = async () => {
-    try {
-      const res = await api.get('/rooms');
-      setRooms(res.data);
-    } catch {
-      showToast('Fehler beim Laden der Zimmer', 'error');
-    }
+    setRooms(listRooms());
     setLoading(false);
-  };
+  }, []);
 
   const handleCreate = async () => {
     try {
-      const res = await api.post('/rooms', { name: 'Neues Zimmer' });
-      navigate(`/rooms/${res.data.id}`);
+      const room = await createRoom({ name: 'Neues Zimmer' });
+      navigate(`/rooms/${room.id}`);
     } catch {
       showToast('Fehler beim Erstellen', 'error');
     }
@@ -35,8 +27,8 @@ export default function RoomListPage() {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`"${name}" wirklich löschen?`)) return;
     try {
-      await api.delete(`/rooms/${id}`);
-      setRooms(r => r.filter(room => room.id !== id));
+      await deleteRoom(id);
+      setRooms(listRooms());
       showToast('Zimmer gelöscht');
     } catch {
       showToast('Fehler beim Löschen', 'error');

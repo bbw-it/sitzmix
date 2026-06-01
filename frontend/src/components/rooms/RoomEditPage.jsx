@@ -1,8 +1,10 @@
 import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 import SeatPlacer from './SeatPlacer';
+import SketchEditor from './SketchEditor';
+import { validateSketchFile, toFileFormat } from '../../lib/sketch';
 
 const AREA_COLORS = [
   '#C4B5FD', '#93C5FD', '#86EFAC',
@@ -35,10 +37,12 @@ export default function RoomEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useContext(ToastContext);
+  const { getRoom, createRoom, updateRoom, saveAreas, saveSeats, setFloorplan, setSketch, removeFloorplan, getImageUrl } = useStore();
   const isNew = !id;
 
   const [name, setName] = useState('Neues Zimmer');
   const [room, setRoom] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
   const [seats, setSeats] = useState([]);
   const [areas, setAreas] = useState([]);
   const [roomId, setRoomId] = useState(id);
@@ -47,6 +51,7 @@ export default function RoomEditPage() {
   const [editorMode, setEditorMode] = useState('seats');
   const [activeAreaId, setActiveAreaId] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [sketchEditorOpen, setSketchEditorOpen] = useState(false);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -64,20 +69,28 @@ export default function RoomEditPage() {
 
   const markDirty = () => { if (loadedRef.current) setIsDirty(true); };
 
-  const loadRoom = async () => {
-    try {
-      const res = await api.get(`/rooms/${id}`);
-      setRoom(res.data);
-      setName(res.data.name);
-      setSeats(res.data.seats || []);
-      setAreas(res.data.areas || []);
-      setRoomId(res.data.id);
-      setIsDirty(false);
-      loadedRef.current = true;
-    } catch {
-      showToast('Fehler beim Laden', 'error');
-    }
+  const loadRoom = () => {
+    const data = getRoom(id);
+    if (!data) { showToast('Fehler beim Laden', 'error'); return; }
+    setRoom(data);
+    setName(data.name);
+    setSeats(data.seats || []);
+    setAreas(data.areas || []);
+    setRoomId(data.id);
+    setIsDirty(false);
+    loadedRef.current = true;
   };
+
+  // Grundriss-Bild als Object-URL auflösen
+  useEffect(() => {
+    let active = true;
+    if (room?.floorplan_image_path) {
+      getImageUrl(room.floorplan_image_path).then(u => { if (active) setImageUrl(u); });
+    } else {
+      setImageUrl(null);
+    }
+    return () => { active = false; };
+  }, [room?.floorplan_image_path]);
 
   // Wenn Bereiche geändert werden (Move/Resize) → Sitze auto-zuweisen
   const handleAreasChange = useCallback((newAreas) => {
@@ -96,49 +109,42 @@ export default function RoomEditPage() {
     setSaving(true);
     try {
       if (isNew && !roomId) {
-        const res = await api.post('/rooms', { name });
-        setRoomId(res.data.id);
-        setRoom(res.data);
+        const created = await createRoom({ name });
+        setRoomId(created.id);
+        setRoom(getRoom(created.id));
         setIsDirty(false);
-        navigate(`/rooms/${res.data.id}`, { replace: true });
+        navigate(`/rooms/${created.id}`, { replace: true });
         showToast('Zimmer erstellt');
       } else {
-        await api.put(`/rooms/${roomId}`, { name });
+        await updateRoom(roomId, { name });
 
-        const savedAreasRes = await api.put(`/rooms/${roomId}/areas`, {
-          areas: areas.map((a, i) => ({
-            name: a.name,
-            color: a.color,
-            sort_order: i,
-            x_pos: a.x_pos,
-            y_pos: a.y_pos,
-            width_pct: a.width_pct,
-            height_pct: a.height_pct,
-          })),
-        });
-        const savedAreas = savedAreasRes.data;
+        const savedAreas = await saveAreas(roomId, areas.map((a) => ({
+          name: a.name,
+          color: a.color,
+          x_pos: a.x_pos,
+          y_pos: a.y_pos,
+          width_pct: a.width_pct,
+          height_pct: a.height_pct,
+        })));
 
         const areaIdMap = new Map();
         areas.forEach((localArea, i) => {
           if (savedAreas[i]) areaIdMap.set(localArea.id, savedAreas[i].id);
         });
 
-        await api.put(`/rooms/${roomId}/seats`, {
-          seats: seats.map((s, i) => ({
-            seat_number: i + 1,
-            x_position: s.x_position,
-            y_position: s.y_position,
-            area_id: s.area_id ? (areaIdMap.get(s.area_id) || null) : null,
-          })),
-        });
+        await saveSeats(roomId, seats.map((s, i) => ({
+          seat_number: i + 1,
+          x_position: s.x_position,
+          y_position: s.y_position,
+          area_id: s.area_id ? (areaIdMap.get(s.area_id) || null) : null,
+        })));
 
-        const res = await api.get(`/rooms/${roomId}`);
-        setRoom(res.data);
-        setSeats(res.data.seats || []);
-        setAreas(res.data.areas || []);
+        const data = getRoom(roomId);
+        setRoom(data);
+        setSeats(data.seats || []);
+        setAreas(data.areas || []);
         if (activeAreaId) {
-          const mappedId = areaIdMap.get(activeAreaId);
-          setActiveAreaId(mappedId || null);
+          setActiveAreaId(areaIdMap.get(activeAreaId) || null);
         }
 
         setIsDirty(false);
@@ -152,26 +158,45 @@ export default function RoomEditPage() {
 
   const handleUpload = async (file) => {
     if (!roomId) return;
+    const isJson = file.type === 'application/json' || /\.json$/i.test(file.name);
     setUploading(true);
-    const formData = new FormData();
-    formData.append('floorplan', file);
     try {
-      const res = await api.post(`/rooms/${roomId}/floorplan`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setRoom(res.data);
-      showToast('Bild hochgeladen');
+      if (isJson) {
+        const text = await file.text();
+        let parsed;
+        try { parsed = JSON.parse(text); } catch { showToast('Datei ist kein gültiges JSON.', 'error'); setUploading(false); return; }
+        const err = validateSketchFile(parsed);
+        if (err) { showToast(`Ungültige Grundriss-Datei: ${err}`, 'error'); setUploading(false); return; }
+        const data = await setSketch(roomId, parsed);
+        setRoom(data);
+        showToast('Grundriss geladen');
+      } else {
+        const data = await setFloorplan(roomId, file);
+        setRoom(data);
+        showToast('Bild hochgeladen');
+      }
     } catch {
-      showToast('Fehler beim Upload', 'error');
+      showToast('Fehler beim Laden', 'error');
     }
     setUploading(false);
+  };
+
+  const downloadSketchJson = () => {
+    if (!room?.floorplan_sketch) return;
+    const blob = new Blob([JSON.stringify(toFileFormat(room.floorplan_sketch), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sitzmix-grundriss-${room.name || 'zimmer'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleRemoveImage = async () => {
     if (!roomId) return;
     try {
-      await api.delete(`/rooms/${roomId}/floorplan`);
-      setRoom(r => ({ ...r, floorplan_image_path: null, image_width: 0, image_height: 0 }));
+      const data = await removeFloorplan(roomId);
+      setRoom(data);
       setSeats([]);
       setAreas([]);
       showToast('Bild entfernt');
@@ -324,28 +349,43 @@ export default function RoomEditPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">Grundriss Bild</label>
-            <div className="flex gap-2">
+            <label className="block text-sm font-bold text-gray-900 mb-2">Grundriss</label>
+            <div className="flex gap-2 flex-wrap">
               <label className="cursor-pointer bg-lime-100 hover:bg-lime-200 text-lime-800 font-medium py-2.5 px-4 rounded-lg text-sm transition-colors">
-                {uploading ? 'Lade hoch...' : 'Bild auswählen...'}
+                {uploading ? 'Lade…' : 'Bild / JSON auswählen…'}
                 <input
                   type="file"
-                  accept="image/png,image/jpeg"
+                  accept="image/png,image/jpeg,application/json,.json"
                   className="hidden"
                   onChange={e => e.target.files[0] && handleUpload(e.target.files[0])}
                   disabled={!roomId || uploading}
                 />
               </label>
-              {room?.floorplan_image_path && (
+              <button
+                onClick={() => setSketchEditorOpen(true)}
+                disabled={!roomId}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-40"
+              >
+                {room?.floorplan_sketch ? 'Skizze bearbeiten' : 'Grundriss skizzieren'}
+              </button>
+              {room?.floorplan_sketch && (
+                <button
+                  onClick={downloadSketchJson}
+                  className="text-gray-600 hover:text-gray-800 font-medium py-2.5 px-3 text-sm transition-colors"
+                >
+                  Als JSON speichern
+                </button>
+              )}
+              {(room?.floorplan_image_path || room?.floorplan_sketch) && (
                 <button
                   onClick={handleRemoveImage}
-                  className="text-red-500 hover:text-red-600 font-medium py-2.5 px-4 text-sm transition-colors"
+                  className="text-red-500 hover:text-red-600 font-medium py-2.5 px-3 text-sm transition-colors"
                 >
-                  Bild entfernen
+                  Entfernen
                 </button>
               )}
             </div>
-            {room?.image_width > 0 && (
+            {room?.floorplan_image_path && room?.image_width > 0 && (
               <p className="text-xs text-gray-500 mt-2">
                 Originalgrösse: {room.image_width}x{room.image_height}px
               </p>
@@ -354,7 +394,7 @@ export default function RoomEditPage() {
         </div>
       </div>
 
-      {roomId && room?.floorplan_image_path && (
+      {roomId && (room?.floorplan_image_path || room?.floorplan_sketch) && (
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -449,7 +489,8 @@ export default function RoomEditPage() {
           )}
 
           <SeatPlacer
-            imageUrl={`/api/uploads/${room.floorplan_image_path}`}
+            imageUrl={imageUrl}
+            sketch={room?.floorplan_sketch || null}
             seats={seats}
             onSeatsChange={handleSeatsChange}
             mode={editorMode}
@@ -463,10 +504,23 @@ export default function RoomEditPage() {
         </div>
       )}
 
-      {roomId && !room?.floorplan_image_path && (
+      {roomId && !room?.floorplan_image_path && !room?.floorplan_sketch && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center">
-          <p className="text-gray-400">Lade zuerst ein Grundriss-Bild hoch, um Sitzplätze zu positionieren.</p>
+          <p className="text-gray-400">Lade ein Grundriss-Bild hoch oder skizziere einen Grundriss, um Sitzplätze zu positionieren.</p>
         </div>
+      )}
+
+      {sketchEditorOpen && (
+        <SketchEditor
+          initialSketch={room?.floorplan_sketch || null}
+          onClose={() => setSketchEditorOpen(false)}
+          onSave={async (sketch) => {
+            const data = await setSketch(roomId, sketch);
+            setRoom(data);
+            setSketchEditorOpen(false);
+            showToast('Grundriss gespeichert');
+          }}
+        />
       )}
     </div>
   );

@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
-import api from '../../api/client';
+import { useStore } from '../../store/StoreProvider';
+import { validateImport, applyImport } from '../../lib/exportImport';
 
 export default function ImportModal({ onClose }) {
+  const { refresh } = useStore();
   const [step, setStep] = useState('select'); // select | preview | importing | done
   const [fileData, setFileData] = useState(null);
   const [error, setError] = useState(null);
@@ -17,14 +19,8 @@ export default function ImportModal({ onClose }) {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
-        if (data.type !== 'sitzmix-export') {
-          setError('Ungültiges Dateiformat. Erwartet: SitzMix-Export.');
-          return;
-        }
-        if (!data.version || data.version > 1) {
-          setError(`Version ${data.version} wird nicht unterstützt.`);
-          return;
-        }
+        const err = validateImport(data);
+        if (err) { setError(err); return; }
         setFileData(data);
         setStep('preview');
       } catch {
@@ -37,11 +33,12 @@ export default function ImportModal({ onClose }) {
   const handleImport = async () => {
     setStep('importing');
     try {
-      const res = await api.post('/import', fileData);
-      setResult(res.data.imported);
+      const imported = await applyImport(fileData);
+      setResult(imported);
+      refresh();
       setStep('done');
     } catch (err) {
-      setError(err.response?.data?.error || 'Import fehlgeschlagen.');
+      setError(err.message || 'Import fehlgeschlagen.');
       setStep('preview');
     }
   };
@@ -113,12 +110,6 @@ export default function ImportModal({ onClose }) {
                   <p className="text-gray-400">Keine Daten in der Datei gefunden.</p>
                 )}
               </div>
-
-              {roomCount > 0 && (
-                <p className="mt-3 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-                  Grundrissbilder werden nicht importiert und müssen manuell hochgeladen werden.
-                </p>
-              )}
 
               {error && (
                 <p className="mt-3 text-sm text-red-600">{error}</p>

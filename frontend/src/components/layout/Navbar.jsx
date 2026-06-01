@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import ExportModal from '../settings/ExportModal';
 import ImportModal from '../settings/ImportModal';
+import PrivacyBanner from './PrivacyBanner';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -126,6 +127,8 @@ export default function Navbar() {
           )}
         </div>
       </nav>
+
+      <PrivacyBanner />
 
       {showExport && <ExportModal onClose={() => setShowExport(false)} />}
       {showImport && <ImportModal onClose={() => setShowImport(false)} />}
