@@ -1,0 +1,57 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import * as store from './store';
+import { buildExport, validateImport, applyImport } from './exportImport';
+
+beforeEach(async () => {
+  await new Promise((res) => { const r = indexedDB.deleteDatabase('sitzmix'); r.onsuccess = r.onerror = () => res(); });
+  store._setState({ schemaVersion: 2, classes: [], rooms: [] });
+});
+
+describe('export/import', () => {
+  it('round-trips a class with rules', async () => {
+    const c = await store.createClass({ name: '3a' });
+    const a = await store.addStudent(c.id, { name: 'Anna' });
+    const b = await store.addStudent(c.id, { name: 'Ben' });
+    await store.addRule(c.id, { studentAId: a.id, studentBId: b.id });
+    const data = await buildExport({ classIds: [c.id], roomIds: [] });
+    expect(data.version).toBe(2);
+
+    store._setState({ schemaVersion: 2, classes: [], rooms: [] });
+    const summary = await applyImport(data);
+    expect(summary.classes).toBe(1);
+    expect(summary.rules).toBe(1);
+    expect(store.getClass(store.listClasses()[0].id).students).toHaveLength(2);
+  });
+
+  it('round-trips a room with a sketch', async () => {
+    const r = await store.createRoom({ name: 'Zi' });
+    await store.setSketch(r.id, { version: 1, width: 800, height: 600, shapes: [{ id: 'c1', type: 'circle', cx: 100, cy: 100, r: 50 }] });
+    const data = await buildExport({ classIds: [], roomIds: [r.id] });
+    expect(data.rooms[0].floorplan_sketch.shapes).toHaveLength(1);
+    store._setState({ schemaVersion: 2, classes: [], rooms: [] });
+    await applyImport(data);
+    const imported = store.listRooms()[0];
+    expect(imported.floorplan_sketch.width).toBe(800);
+  });
+
+  it('accepts v1 and rejects v3', () => {
+    expect(validateImport({ type: 'sitzmix-export', version: 1 })).toBeNull();
+    expect(validateImport({ type: 'sitzmix-export', version: 3 })).toMatch(/nicht unterstützt/);
+    expect(validateImport({ type: 'x' })).toMatch(/Ungültiges/);
+  });
+
+  it('suffixes duplicate class names on import', async () => {
+    await store.createClass({ name: '3a' });
+    await applyImport({ type: 'sitzmix-export', version: 2, classes: [{ name: '3a', students: [], rules: [] }], rooms: [] });
+    expect(store.listClasses().map(c => c.name).sort()).toEqual(['3a', '3a (Import)']);
+  });
+
+  it('preserves student colors through round-trip', async () => {
+    const c = await store.createClass({ name: '3a' });
+    const data = await buildExport({ classIds: [c.id], roomIds: [] });
+    data.classes[0].students.push({ name: 'Zoe', color: '#123456' });
+    await applyImport(data);
+    const imported = store.getClass(store.listClasses().find(x => x.name === '3a (Import)').id);
+    expect(imported.students.find(s => s.name === 'Zoe').color).toBe('#123456');
+  });
+});

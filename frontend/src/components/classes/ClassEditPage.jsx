@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 
 const PASTEL_COLORS = [
@@ -13,6 +13,7 @@ export default function ClassEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useContext(ToastContext);
+  const { getClass, createClass, updateClass, addStudent, bulkAddStudents, deleteStudent, addRule, deleteRule } = useStore();
   const isNew = !id;
 
   const [name, setName] = useState('Neue Klasse');
@@ -43,31 +44,28 @@ export default function ClassEditPage() {
 
   const markDirty = () => { if (loadedRef.current) setIsDirty(true); };
 
-  const loadClass = async () => {
-    try {
-      const res = await api.get(`/classes/${id}`);
-      setName(res.data.name);
-      setStudents(res.data.students || []);
-      setRules(res.data.rules || []);
-      setClassId(res.data.id);
-      setIsDirty(false);
-      loadedRef.current = true;
-    } catch {
-      showToast('Fehler beim Laden', 'error');
-    }
+  const loadClass = () => {
+    const data = getClass(id);
+    if (!data) { showToast('Fehler beim Laden', 'error'); return; }
+    setName(data.name);
+    setStudents(data.students || []);
+    setRules(data.rules || []);
+    setClassId(data.id);
+    setIsDirty(false);
+    loadedRef.current = true;
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
       if (isNew && !classId) {
-        const res = await api.post('/classes', { name });
-        setClassId(res.data.id);
+        const cls = await createClass({ name });
+        setClassId(cls.id);
         setIsDirty(false);
-        navigate(`/classes/${res.data.id}`, { replace: true });
+        navigate(`/classes/${cls.id}`, { replace: true });
         showToast('Klasse erstellt');
       } else {
-        await api.put(`/classes/${classId}`, { name });
+        await updateClass(classId, { name });
         setIsDirty(false);
         showToast('Gespeichert');
       }
@@ -77,11 +75,11 @@ export default function ClassEditPage() {
     setSaving(false);
   };
 
-  const addStudent = async () => {
+  const handleAddStudent = async () => {
     if (!newStudentName.trim() || !classId) return;
     try {
-      const res = await api.post(`/classes/${classId}/students`, { name: newStudentName.trim() });
-      setStudents(s => [...s, res.data]);
+      const s = await addStudent(classId, { name: newStudentName.trim() });
+      setStudents(prev => [...prev, s]);
       setNewStudentName('');
     } catch {
       showToast('Fehler beim Hinzufügen', 'error');
@@ -91,18 +89,18 @@ export default function ClassEditPage() {
   const bulkImport = async () => {
     if (!bulkText.trim() || !classId) return;
     try {
-      const res = await api.post(`/classes/${classId}/students/bulk`, { students: bulkText });
-      setStudents(s => [...s, ...res.data]);
+      const added = await bulkAddStudents(classId, bulkText);
+      setStudents(prev => [...prev, ...added]);
       setBulkText('');
-      showToast(`${res.data.length} Lernende hinzugefügt`);
+      showToast(`${added.length} Lernende hinzugefügt`);
     } catch {
       showToast('Fehler beim Import', 'error');
     }
   };
 
-  const deleteStudent = async (studentId) => {
+  const handleDeleteStudent = async (studentId) => {
     try {
-      await api.delete(`/students/${studentId}`);
+      await deleteStudent(studentId);
       setStudents(s => s.filter(st => st.id !== studentId));
       setRules(r => r.filter(rule => rule.student_a_id !== studentId && rule.student_b_id !== studentId));
     } catch {
@@ -110,24 +108,21 @@ export default function ClassEditPage() {
     }
   };
 
-  const addRule = async () => {
+  const handleAddRule = async () => {
     if (!ruleA || !ruleB || ruleA === ruleB || !classId) return;
     try {
-      const res = await api.post(`/classes/${classId}/rules`, {
-        studentAId: parseInt(ruleA),
-        studentBId: parseInt(ruleB),
-      });
-      setRules(r => [...r, res.data]);
+      const rule = await addRule(classId, { studentAId: ruleA, studentBId: ruleB });
+      setRules(r => [...r, rule]);
       setRuleA('');
       setRuleB('');
     } catch (err) {
-      showToast(err.response?.data?.error || 'Fehler beim Hinzufügen', 'error');
+      showToast(err.message || 'Fehler beim Hinzufügen', 'error');
     }
   };
 
-  const deleteRule = async (ruleId) => {
+  const handleDeleteRule = async (ruleId) => {
     try {
-      await api.delete(`/rules/${ruleId}`);
+      await deleteRule(ruleId);
       setRules(r => r.filter(rule => rule.id !== ruleId));
     } catch {
       showToast('Fehler beim Löschen', 'error');
@@ -221,7 +216,7 @@ export default function ClassEditPage() {
                           <span className="text-sm font-medium">{s.name}</span>
                         </div>
                         <button
-                          onClick={() => deleteStudent(s.id)}
+                          onClick={() => handleDeleteStudent(s.id)}
                           className="text-red-400 hover:text-red-600 transition-colors"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,7 +276,7 @@ export default function ClassEditPage() {
                           <span className="font-medium">{r.studentB?.name}</span>
                         </div>
                         <button
-                          onClick={() => deleteRule(r.id)}
+                          onClick={() => handleDeleteRule(r.id)}
                           className="text-red-400 hover:text-red-600 transition-colors"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,13 +318,13 @@ export default function ClassEditPage() {
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                       >
                         <option value="">Bitte wählen...</option>
-                        {students.filter(s => s.id !== parseInt(ruleA)).map(s => (
+                        {students.filter(s => s.id !== ruleA).map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
                     </div>
                     <button
-                      onClick={addRule}
+                      onClick={handleAddRule}
                       disabled={!ruleA || !ruleB || ruleA === ruleB}
                       className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-30"
                     >

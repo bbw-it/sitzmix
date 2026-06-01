@@ -1,10 +1,9 @@
 # SitzMix
 
-Modernes Sitzplan-Tool für Lehrpersonen — generiert faire, regelbasierte Sitzordnungen per Klick.
+Modernes Sitzplan-Tool für Lehrpersonen — generiert faire, regelbasierte Sitzordnungen per Klick. **Rein clientseitig: alle Daten bleiben im Browser, der Server speichert nichts.**
 
-![Version](https://img.shields.io/badge/version-1.0-green)
+![Version](https://img.shields.io/badge/version-2.0-green)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
-![Node](https://img.shields.io/badge/node-22-brightgreen)
 ![React](https://img.shields.io/badge/react-19-61DAFB)
 
 ---
@@ -13,39 +12,59 @@ Modernes Sitzplan-Tool für Lehrpersonen — generiert faire, regelbasierte Sitz
 
 SitzMix unterstützt Lehrpersonen beim wöchentlichen Mischen von Sitzordnungen. Klassen und Zimmer werden einmalig erfasst, danach genügt ein Klick, um eine neue, zufällige Sitzordnung zu erzeugen — unter Berücksichtigung definierter Regeln (z.B. welche Lernende nicht nebeneinander sitzen dürfen).
 
+Die App läuft **vollständig im Browser**. Es gibt kein Backend, keine Datenbank und keine API — der Server liefert ausschliesslich statische Dateien aus.
+
+## Datenschutz
+
+SitzMix verarbeitet **keine** personenbezogenen Daten auf dem Server. Klassenbezeichnungen, Schülernamen und Sitz-Regeln — sowie alle übrigen Daten, Grundriss-Bilder und Skizzen — werden ausschliesslich **lokal im Browser** der Lehrperson gespeichert (IndexedDB). Es gibt keinen Upload an einen Server; dieser sieht die Daten der Nutzer nie. Damit ist die datenschutzrechtliche Vorgabe baulich erfüllt.
+
+- Beim ersten Start fordert die App **Persistent Storage** an, um den Browser-Speicher vor automatischer Verdrängung zu schützen.
+- Ein dezenter Hinweis-Banner erinnert daran, regelmässig zu sichern.
+- Über **Einstellungen → Daten exportieren** lässt sich jederzeit eine JSON-Sicherung erstellen (inkl. Grundriss-Bildern und Skizzen). Diese kann auf einem anderen Gerät oder nach dem Leeren des Browser-Speichers wieder importiert werden.
+
+---
+
 ## Funktionen
 
 ### Sitzplan-Generator
 
-- Klasse und Zimmer auswählen, Sitzplan per Klick generieren
-- Zufällige Zuteilung der Lernenden auf definierte Sitzplätze
+- Klasse und Zimmer auswählen, Sitzplan per Klick generieren (Berechnung läuft im Browser)
 - Zwei Verteilmodi:
   - **Sequenziell** — Plätze werden der Reihe nach befüllt
   - **Pro Tischgruppe** — Lernende gleichmässig auf Tischgruppen verteilen, mit Abstandsoptimierung
 - Berücksichtigung von Regeln (wer **nicht** nebeneinander sitzen darf)
-- Sitzplan als **PNG exportieren** oder in der **Vollbild-Lightbox** betrachten
+- **Abwesende markieren:** Lernende per `×`-Klick als abwesend setzen — der Platz wird frei, die Person landet in einer sichtbaren Abwesenden-Liste. Zurückholen per Klick (nächster freier Platz) oder per Drag auf einen freien Platz.
+- **Manuell umordnen:** Lernende per **Drag & Drop** verschieben oder tauschen — mit visuellem Feedback (Quelle wird transparent, Zielplatz hervorgehoben).
+- **Neu mischen (nur Anwesende):** neu generieren und dabei die Abwesenden auslassen.
+- Sitzplan als **PNG exportieren** oder in der **Vollbild-Lightbox** betrachten (zeigt immer den aktuell bearbeiteten Stand)
 - Jederzeit neu mischen mit einem Klick
 
 ### Klassenverwaltung
 
 - Klassen erstellen und benennen
-- Lernende einzeln oder im Bulk (Textfeld, ein Name pro Zeile) hinzufügen
+- Lernende einzeln oder im Bulk (Textfeld, getrennt durch Zeilenumbruch/Komma/Semikolon) hinzufügen
 - Individuelle Farben pro Lernende (Pastell-Palette) für visuelle Unterscheidung
 - Regeln definieren: Paare festlegen, die nicht nebeneinander sitzen sollen
 - Klassen bearbeiten und löschen
 
 ### Zimmerverwaltung
 
-- Zimmer erstellen und Grundriss-Bild hochladen (PNG/JPEG)
+Ein Zimmer hat **entweder** einen hochgeladenen Grundriss **oder** eine selbst gezeichnete Skizze:
+
+- **Bild hochladen** — fertige Grundrisse als PNG/JPEG (wird lokal im Browser gespeichert)
+- **Grundriss skizzieren** — ein integrierter Mini-Editor:
+  - Wände als **Rechtecke** und **Kreise** einzeichnen
+  - Rechtecke sind editierbare **Polygone**: Eckpunkte verschieben, an Kantenmitten neue Punkte hinzufügen (z.B. für L-Formen), Punkte löschen
+  - Kreise verschieben und grössern, Formen löschen
+  - Skizze als **JSON speichern** und später über denselben Datei-Dialog wieder laden (ungültige Dateien werden sauber abgefangen)
 - Tischgruppen (Areas) mit Position, Grösse und Farbe definieren
-- Sitzplätze per **Drag & Drop** auf dem Grundriss platzieren
-- **Snap-to-Grid** (2%-Raster) für saubere Ausrichtung
-- Sitzplätze verschieben, Tischgruppen zuweisen oder per Tastatur (Delete/Backspace) entfernen
+- Sitzplätze per **Drag & Drop** auf dem Grundriss platzieren, **Snap-to-Grid** (2%-Raster)
+- Sitzplätze verschieben, Tischgruppen automatisch zuweisen oder per Tastatur (Delete/Backspace) entfernen
 
 ### Datenmanagement
 
-- Gesamte Datenbank als **JSON exportieren** (Backup)
-- JSON-Backup wieder **importieren** (Restore)
+- Gesamten Datenbestand als **JSON exportieren** (Backup, inkl. Grundriss-Bilder als Base64 und Skizzen)
+- JSON-Backup wieder **importieren** (Restore) — liest auch ältere v1-Exporte
 
 ---
 
@@ -53,100 +72,68 @@ SitzMix unterstützt Lehrpersonen beim wöchentlichen Mischen von Sitzordnungen.
 
 | Komponente | Technologie |
 |---|---|
-| Frontend | React 19, Vite 7, TailwindCSS 4 |
-| Backend | Node.js 22, Express 4, Sequelize 6 |
-| Datenbank | MariaDB 11 |
-| Bildexport | html-to-image |
-| Deployment | Docker, Docker Compose (Multi-Stage Build) |
+| Frontend | React 19, Vite 7, TailwindCSS 4, React Router 7 |
+| Datenhaltung | IndexedDB (im Browser) |
+| Grafik | SVG (Skizzen), html-to-image (PNG-Export) |
+| Tests | Vitest, fake-indexeddb |
+| Deployment | Docker + Nginx (statisch) |
 
 ---
 
-## Schnellstart mit Docker
+## Schnellstart
 
 ### Voraussetzungen
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installiert
+- [Docker](https://docs.docker.com/engine/install/) mit Compose v2 (für Deployment)
+- alternativ Node.js 22+ (für lokale Entwicklung)
 
-### Starten
+### Repository klonen
 
 ```bash
-git clone https://github.com/dein-user/sitzmix.git
+git clone <REPO-URL> sitzmix
 cd sitzmix
-docker compose up -d
 ```
 
-Die App ist danach erreichbar unter: **http://localhost:3001**
-
-### Stoppen
+### Mit Docker starten
 
 ```bash
-docker compose down
+./setup.sh
 ```
 
-### Aktualisieren (nach Code-Änderungen)
+Das Skript prüft Docker/Compose, baut das Image und startet den Container. SitzMix ist danach erreichbar unter **http://localhost:3001**.
+
+Alternativ manuell:
 
 ```bash
-docker compose up -d --build
+docker compose up -d --build   # bauen & starten
+docker compose down            # stoppen
 ```
 
-### Daten zurücksetzen
+Der Port lässt sich über die Umgebungsvariable `SITZMIX_PORT` ändern (Standard: `3001`):
 
 ```bash
-# Alle Container und Volumes löschen (Daten gehen verloren!)
-docker compose down -v
+SITZMIX_PORT=8090 ./setup.sh
 ```
+
+`setup.sh` ist **idempotent** — ein erneuter Aufruf baut neu und aktualisiert die laufende Instanz. So lässt sich nach einem `git pull` einfach die neueste Version ausrollen.
+
+### Öffentliche Domain (z.B. sitzmix.ch)
+
+Einen Reverse-Proxy (nginx/Caddy/Traefik) auf den SitzMix-Port richten und dort TLS terminieren. Der Container selbst liefert nur HTTP auf Port 80 (intern) bzw. den gemappten Host-Port.
 
 ---
 
-## Lokale Entwicklung (ohne Docker)
-
-### Voraussetzungen
-
-- Node.js 22+
-- MariaDB 11 (lokal oder via Docker)
-
-### Backend starten
-
-```bash
-cd backend
-cp .env.example .env   # DB-Credentials anpassen
-npm install
-npm run dev             # Startet mit Nodemon auf Port 3001
-```
-
-### Frontend starten
+## Lokale Entwicklung
 
 ```bash
 cd frontend
 npm install
-npm run dev             # Startet Vite auf Port 5173
+npm run dev      # Vite-Dev-Server auf http://localhost:5173
+npm test         # Unit-/Integrationstests (Vitest)
+npm run build    # Produktions-Build nach dist/
 ```
 
-Das Frontend leitet `/api`-Requests automatisch an `http://localhost:3001` weiter (Vite Proxy).
-
----
-
-## Konfiguration
-
-### Umgebungsvariablen
-
-| Variable | Standard | Beschreibung |
-|---|---|---|
-| `DB_HOST` | `db` (Docker) / `127.0.0.1` (lokal) | Datenbank-Host |
-| `DB_PORT` | `3306` (Docker) / `3307` (lokal) | Datenbank-Port |
-| `DB_USER` | `user1` | Datenbank-Benutzer |
-| `DB_PASSWORD` | `user123` | Datenbank-Passwort |
-| `DB_NAME` | `sitzmix` | Datenbankname |
-| `PORT` | `3001` | Port der Web-App |
-
-### Port ändern (Docker)
-
-In `docker-compose.yml` den Host-Port anpassen:
-
-```yaml
-ports:
-  - "8080:3001"
-```
+Kein Backend, keine Datenbank — die App läuft vollständig im Browser.
 
 ---
 
@@ -154,75 +141,77 @@ ports:
 
 ```
 sitzmix/
-├── docker-compose.yml          # Docker Compose Orchestration
-├── Dockerfile                  # Multi-Stage Build (Frontend + Backend)
-├── database/
-│   └── init.sql                # Schema + Seed-Daten
-├── backend/
-│   ├── server.js               # Express Entry Point
-│   ├── config/
-│   │   └── database.js         # Sequelize-Konfiguration
-│   ├── models/                 # Datenmodelle
-│   │   ├── Class.js
-│   │   ├── Student.js
-│   │   ├── Rule.js
-│   │   ├── Room.js
-│   │   ├── Seat.js
-│   │   └── Area.js
-│   ├── routes/                 # REST-API Endpunkte
-│   │   ├── classes.js
-│   │   ├── students.js
-│   │   ├── rules.js
-│   │   ├── rooms.js
-│   │   ├── seats.js
-│   │   ├── areas.js
-│   │   ├── generator.js
-│   │   └── export.js
-│   ├── services/
-│   │   └── seatingAlgorithm.js # Sitzplan-Algorithmus
-│   ├── middleware/
-│   │   └── upload.js           # Multer File-Upload
-│   └── uploads/                # Hochgeladene Grundrisse
+├── docker-compose.yml          # Ein Service (Nginx, statisch)
+├── Dockerfile                  # Multi-Stage: Vite-Build → Nginx
+├── nginx.conf                  # Statisches Hosting + SPA-Fallback
+├── setup.sh                    # Deployment-Skript (idempotent)
+├── docs/                       # Design-Specs & Implementierungspläne
 └── frontend/
-    ├── vite.config.js          # Vite + TailwindCSS + Proxy
+    ├── vite.config.js
+    ├── vitest.config.js
+    ├── public/
+    │   └── default-floorplan.png   # Beispiel-Grundriss (Seed)
     └── src/
-        ├── main.jsx            # React Entry Point
-        ├── App.jsx             # Routing & Toast-Context
-        ├── api/
-        │   └── client.js       # Axios-Instanz
+        ├── main.jsx                # Entry Point (mountet StoreProvider)
+        ├── App.jsx                 # Routing & Toast-Context
+        ├── lib/
+        │   ├── db.js               # IndexedDB-Wrapper (Snapshot + Bild-Blobs)
+        │   ├── store.js            # In-Memory-Store, CRUD, Generate, Persistenz
+        │   ├── exportImport.js     # JSON Export/Import (v1 + v2)
+        │   ├── seatingAlgorithm.js # Sitzplan-Algorithmus (Backtracking)
+        │   ├── seatingPlan.js      # Reine Helfer fürs Umordnen/Abwesend
+        │   ├── sketch.js           # Skizzen-Geometrie + Datei-Validierung
+        │   └── seedData.js         # Beispieldaten beim ersten Start
+        ├── store/
+        │   └── StoreProvider.jsx   # React-Context + useStore()-Hook
         └── components/
-            ├── layout/         # Navbar
-            ├── generator/      # Sitzplan-Generator UI
-            ├── classes/        # Klassenverwaltung
-            ├── rooms/          # Zimmerverwaltung + Grundriss-Editor
-            ├── settings/       # Import/Export
-            └── common/         # Toast, SearchableSelect
+            ├── layout/             # Navbar + Datenschutz-Banner
+            ├── generator/          # GeneratorPage, AbsentList
+            ├── classes/            # Klassen-Liste & -Editor
+            ├── rooms/              # Zimmer-Editor, SeatPlacer,
+            │                       #   FloorplanSketch, SketchEditor
+            ├── settings/           # Import/Export-Modals
+            └── common/             # Toast, SearchableSelect
 ```
 
 ---
 
-## API-Endpunkte
+## Datenmodell (im Browser)
 
-| Methode | Pfad | Beschreibung |
-|---|---|---|
-| `GET/POST` | `/api/classes` | Klassen auflisten / erstellen |
-| `GET/PUT/DELETE` | `/api/classes/:id` | Klasse lesen / bearbeiten / löschen |
-| `GET/POST/DELETE` | `/api/students` | Lernende verwalten |
-| `GET/POST/DELETE` | `/api/rules` | Regeln (verbotene Paare) verwalten |
-| `GET/POST` | `/api/rooms` | Zimmer auflisten / erstellen |
-| `GET/PUT/DELETE` | `/api/rooms/:id` | Zimmer lesen / bearbeiten / löschen |
-| `GET/POST/DELETE` | `/api/seats` | Sitzplätze verwalten |
-| `GET/POST/PUT/DELETE` | `/api/areas` | Tischgruppen verwalten |
-| `POST` | `/api/generator/generate` | Sitzplan generieren |
-| `GET` | `/api/export` | Datenbank als JSON exportieren |
-| `POST` | `/api/import` | JSON-Backup importieren |
-| `GET` | `/api/health` | Health Check (Docker) |
+Ein Snapshot-Objekt in IndexedDB (Object-Store `app`, Key `snapshot`); Grundriss-Bilder als separate Blobs (Object-Store `images`):
+
+```js
+{
+  schemaVersion: 2,
+  classes: [
+    { id, name,
+      students: [{ id, name, color }],
+      rules:    [{ id, student_a_id, student_b_id }] }
+  ],
+  rooms: [
+    { id, name, image_width, image_height,
+      floorplan_image_path,   // = imageId des Blobs, oder null
+      floorplan_sketch,       // { version, width, height, shapes } oder null (exklusiv zum Bild)
+      areas: [{ id, name, color, sort_order, x_pos, y_pos, width_pct, height_pct }],
+      seats: [{ id, seat_number, x_position, y_position, area_id }] }
+  ]
+}
+```
+
+- IDs sind UUIDs (`crypto.randomUUID()`). Nach jeder Änderung wird der vollständige Snapshot persistiert.
+- `floorplan_image_path` und `floorplan_sketch` schliessen sich gegenseitig aus (entweder Bild oder Skizze).
+- Eine Skizze ist rein visuell und beeinflusst den Algorithmus nicht.
+
+### Datei-Formate
+
+- **App-Backup:** `{ type: "sitzmix-export", version: 2, classes, rooms }` (Bilder als Base64, Skizzen inline).
+- **Einzelne Skizze:** `{ type: "sitzmix-floorplan", version: 1, width, height, shapes }`.
 
 ---
 
 ## Sitzplan-Algorithmus
 
-Der Algorithmus verwendet **Backtracking mit Constraint Solving**:
+Der Algorithmus verwendet **Backtracking mit Constraint Solving** und läuft vollständig im Browser:
 
 1. **Sequenzieller Modus**: Lernende werden zufällig auf Plätze verteilt. Per Backtracking wird sichergestellt, dass verbotene Paare weder im selben Bereich noch auf physisch benachbarten Plätzen landen.
 
@@ -236,13 +225,15 @@ Der Algorithmus verwendet **Backtracking mit Constraint Solving**:
 
 ---
 
-## Seed-Daten
+## Beispieldaten
 
-Die Datenbank wird beim ersten Start mit Beispieldaten befüllt:
+Beim allerersten Start (leerer Browser-Speicher) wird ein Beispieldatensatz angelegt:
 
 - 1 Klasse mit 24 Lernenden
 - 1 Zimmer mit 6 Tischgruppen à 4 Plätzen
 - Grundriss-Bild mit vorplatzierten Sitzen
+
+Über das Daten-Backup oder durch Löschen des Browser-Speichers lässt sich dieser Zustand zurücksetzen.
 
 ---
 

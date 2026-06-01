@@ -1,32 +1,24 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 
 export default function ClassListPage() {
+  const { listClasses, createClass, deleteClass } = useStore();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const showToast = useContext(ToastContext);
 
   useEffect(() => {
-    loadClasses();
-  }, []);
-
-  const loadClasses = async () => {
-    try {
-      const res = await api.get('/classes');
-      setClasses(res.data);
-    } catch {
-      showToast('Fehler beim Laden der Klassen', 'error');
-    }
+    setClasses(listClasses());
     setLoading(false);
-  };
+  }, []);
 
   const handleCreate = async () => {
     try {
-      const res = await api.post('/classes', { name: 'Neue Klasse' });
-      navigate(`/classes/${res.data.id}`);
+      const cls = await createClass({ name: 'Neue Klasse' });
+      navigate(`/classes/${cls.id}`);
     } catch {
       showToast('Fehler beim Erstellen', 'error');
     }
@@ -35,8 +27,8 @@ export default function ClassListPage() {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`"${name}" wirklich löschen? Alle Lernenden und Regeln werden ebenfalls gelöscht.`)) return;
     try {
-      await api.delete(`/classes/${id}`);
-      setClasses(c => c.filter(cls => cls.id !== id));
+      await deleteClass(id);
+      setClasses(listClasses());
       showToast('Klasse gelöscht');
     } catch {
       showToast('Fehler beim Löschen', 'error');

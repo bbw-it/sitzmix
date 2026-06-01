@@ -1,45 +1,7 @@
 services:
-  # ── MariaDB ──────────────────────────────
-  db:
-    image: mariadb:11
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: rootpw123
-      MARIADB_DATABASE: sitzmix
-      MARIADB_USER: user1
-      MARIADB_PASSWORD: user123
-    volumes:
-      - db-data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    # Port nur intern - auskommentieren falls externer Zugriff gewünscht:
-    # ports:
-    #   - "3307:3306"
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  # ── SitzMix App ──────────────────────────
-  app:
+  sitzmix:
     build: .
-    restart: unless-stopped
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: user1
-      DB_PASSWORD: user123
-      DB_NAME: sitzmix
-      PORT: 3001
+    container_name: sitzmix
     ports:
-      - "3001:3001"
-    volumes:
-      - uploads-data:/app/uploads
-    depends_on:
-      db:
-        condition: service_healthy
-
-volumes:
-  db-data:
-  uploads-data:
+      - "${SITZMIX_PORT:-3001}:80"
+    restart: unless-stopped

@@ -1,13 +1,31 @@
 import { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { toPng } from 'html-to-image';
-import api from '../../api/client';
+import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 import SearchableSelect from '../common/SearchableSelect';
+import FloorplanSketch from '../rooms/FloorplanSketch';
+import AbsentList from './AbsentList';
+import { swapOrMove, markAbsent, placeStudent, nextFreeSeatIndex } from '../../lib/seatingPlan';
 
 export default function GeneratorPage() {
   const showToast = useContext(ToastContext);
+  const { listClasses, listRooms, generate, getImageUrl } = useStore();
   const planRef = useRef(null);
   const lightboxRef = useRef(null);
+  const dragIndexRef = useRef(null);
+  const [planImageUrl, setPlanImageUrl] = useState(null);
+  const [seats, setSeats] = useState([]);   // bearbeitbare Kopie von result.assignments
+  const [absent, setAbsent] = useState([]);
+  const [draggingIndex, setDraggingIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  // Drag-Zustand sicher aufräumen, egal wo der Drag endet (auch von der Abwesenden-Liste)
+  useEffect(() => {
+    const clear = () => { setDraggingIndex(null); setDragOverIndex(null); };
+    window.addEventListener('dragend', clear);
+    window.addEventListener('drop', clear);
+    return () => { window.removeEventListener('dragend', clear); window.removeEventListener('drop', clear); };
+  }, []);
 
   const [classes, setClasses] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -59,53 +77,107 @@ export default function GeneratorPage() {
   }, [lightboxOpen, closeLightbox]);
 
   useEffect(() => {
-    api.get('/classes').then(res => setClasses(res.data)).catch(() => {});
-    api.get('/rooms').then(res => setRooms(res.data)).catch(() => {});
+    setClasses(listClasses());
+    setRooms(listRooms());
   }, []);
 
+  // Grundriss-Bild des Ergebnisses als Object-URL auflösen
+  useEffect(() => {
+    let active = true;
+    const imgId = result?.room?.floorplan_image_path;
+    if (imgId) {
+      getImageUrl(imgId).then(u => { if (active) setPlanImageUrl(u); });
+    } else {
+      setPlanImageUrl(null);
+    }
+    return () => { active = false; };
+  }, [result?.room?.floorplan_image_path]);
+
   const selectedRoomHasAreas = selectedRoom
-    ? rooms.find(r => r.id === parseInt(selectedRoom))?.hasAreas
+    ? rooms.find(r => r.id === selectedRoom)?.hasAreas
     : false;
 
-  const generate = async () => {
+  const handleGenerate = () => {
     if (!selectedClass || !selectedRoom) {
       showToast('Bitte Klasse und Zimmer wählen', 'warning');
       return;
     }
     setGenerating(true);
     try {
-      const payload = {
-        classId: parseInt(selectedClass),
-        roomId: parseInt(selectedRoom),
-      };
+      const payload = { classId: selectedClass, roomId: selectedRoom };
       if (selectedRoomHasAreas && fillMode === 'per_area') {
         payload.fillMode = 'per_area';
         payload.personsPerArea = personsPerArea;
       }
-      const res = await api.post('/generator/generate', payload);
-      setResult(res.data);
-      if (res.data.warning) {
-        showToast(res.data.warning, 'warning');
-      }
+      const res = generate(payload);
+      setResult(res);
+      setSeats(res.assignments.map(a => ({ ...a })));
+      setAbsent([]);   // regulär = alle wieder anwesend
+      if (res.warning) showToast(res.warning, 'warning');
     } catch (err) {
-      showToast(err.response?.data?.error || 'Fehler beim Generieren', 'error');
+      showToast(err.message || 'Fehler beim Generieren', 'error');
     }
     setGenerating(false);
   };
 
   const handleClassChange = (val) => {
     setSelectedClass(val);
-    const cls = classes.find(c => c.id === parseInt(val));
+    const cls = classes.find(c => c.id === val);
     setClassName(cls?.name || '');
     setResult(null);
+    setSeats([]);
+    setAbsent([]);
   };
 
   const handleRoomChange = (val) => {
     setSelectedRoom(val);
-    const room = rooms.find(r => r.id === parseInt(val));
+    const room = rooms.find(r => r.id === val);
     setRoomName(room?.name || '');
     setResult(null);
+    setSeats([]);
+    setAbsent([]);
     setFillMode(room?.hasAreas ? 'per_area' : 'sequential');
+  };
+
+  // ── Ephemere Plan-Bearbeitung ──
+  const handleMarkAbsent = (idx) => {
+    const { seats: next, student } = markAbsent(seats, idx);
+    if (!student) return;
+    setSeats(next);
+    setAbsent(prev => [...prev, student]);
+  };
+
+  const handleSeatDrop = (toIdx) => {
+    const fromIdx = dragIndexRef.current;
+    dragIndexRef.current = null;
+    if (fromIdx == null || fromIdx === toIdx) return;
+    setSeats(prev => swapOrMove(prev, fromIdx, toIdx));
+  };
+
+  const handleAbsentDropOnSeat = (toIdx, studentId) => {
+    const student = absent.find(s => s.id === studentId);
+    if (!student) return;
+    const { seats: next, placed } = placeStudent(seats, student, toIdx);
+    if (!placed) return;   // besetzter Platz → ignorieren
+    setSeats(next);
+    setAbsent(prev => prev.filter(s => s.id !== studentId));
+  };
+
+  const handleReturnAbsent = (studentId) => {
+    const idx = nextFreeSeatIndex(seats);
+    if (idx === -1) { showToast('Kein freier Platz vorhanden', 'warning'); return; }
+    handleAbsentDropOnSeat(idx, studentId);
+  };
+
+  const reshuffleWithoutAbsent = () => {
+    try {
+      const payload = { classId: selectedClass, roomId: selectedRoom, absentIds: absent.map(s => s.id) };
+      if (selectedRoomHasAreas && fillMode === 'per_area') { payload.fillMode = 'per_area'; payload.personsPerArea = personsPerArea; }
+      const res = generate(payload);
+      setResult(res);
+      setSeats(res.assignments.map(a => ({ ...a })));   // absent bleibt erhalten
+      if (res.warning) showToast(res.warning, 'warning');
+    } catch (e) { showToast(e.message || 'Fehler beim Generieren', 'error'); }
   };
 
   const downloadPng = async () => {
@@ -114,6 +186,7 @@ export default function GeneratorPage() {
       const dataUrl = await toPng(planRef.current, {
         pixelRatio: 2,
         backgroundColor: '#ffffff',
+        filter: (node) => !(node.classList && node.classList.contains('export-hide')),
       });
       const link = document.createElement('a');
       link.download = `sitzmix-${className || 'plan'}-${roomName || 'zimmer'}.png`;
@@ -130,11 +203,19 @@ export default function GeneratorPage() {
     const emptyCircleClass = sizeVariant === 'large' ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs';
     const textClass = sizeVariant === 'large' ? 'text-xs' : 'text-[10px]';
 
+    const sketch = result.room.floorplan_sketch;
     return (
       <>
-        {result.room.floorplan_image_path ? (
+        {sketch ? (
+          <div
+            className={sizeVariant === 'large' ? 'block max-h-[88vh]' : 'w-full block'}
+            style={{ aspectRatio: `${sketch.width} / ${sketch.height}` }}
+          >
+            <FloorplanSketch sketch={sketch} />
+          </div>
+        ) : planImageUrl ? (
           <img
-            src={`/api/uploads/${result.room.floorplan_image_path}`}
+            src={planImageUrl}
             alt="Grundriss"
             className={sizeVariant === 'large' ? 'block max-h-[88vh] w-auto' : 'w-full block'}
             draggable={false}
@@ -145,19 +226,46 @@ export default function GeneratorPage() {
           </div>
         )}
 
-        {result.assignments.map((a, i) => (
+        {seats.map((a, i) => {
+          const interactive = sizeVariant === 'normal';
+          const isDragSource = interactive && draggingIndex === i;
+          const isDropTarget = interactive && dragOverIndex === i && draggingIndex !== i;
+          return (
           <div
-            key={i}
-            className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+            key={a.seatId ?? i}
+            className={`group absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 transition-opacity ${isDragSource ? 'opacity-30' : ''}`}
             style={{
               left: `${a.xPosition}%`,
               top: `${a.yPosition}%`,
             }}
+            {...(interactive ? {
+              draggable: !!a.student,
+              onDragStart: () => { dragIndexRef.current = i; setDraggingIndex(i); },
+              onDragEnd: () => { setDraggingIndex(null); setDragOverIndex(null); },
+              onDragOver: (e) => { e.preventDefault(); if (dragOverIndex !== i) setDragOverIndex(i); },
+              onDragLeave: () => { setDragOverIndex(prev => (prev === i ? null : prev)); },
+              onDrop: (e) => {
+                e.preventDefault();
+                const absentId = e.dataTransfer.getData('text/absent-id');
+                if (absentId) handleAbsentDropOnSeat(i, absentId);
+                else handleSeatDrop(i);
+                setDraggingIndex(null); setDragOverIndex(null);
+              },
+            } : {})}
           >
             {a.student ? (
               <>
+                {interactive && (
+                  <button
+                    className="export-hide absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white border border-gray-300 text-gray-500 hover:bg-red-50 hover:text-red-600 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    title="Als abwesend markieren"
+                    onClick={(e) => { e.stopPropagation(); handleMarkAbsent(i); }}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
                 <div
-                  className={`${circleClass} rounded-full flex items-center justify-center font-bold text-gray-800 shadow-md border-2 border-white`}
+                  className={`${circleClass} rounded-full flex items-center justify-center font-bold text-gray-800 shadow-md border-2 border-white transition-transform ${interactive ? 'cursor-grab active:cursor-grabbing group-hover:scale-110' : ''} ${isDropTarget ? 'ring-4 ring-blue-400 ring-offset-1 scale-110' : ''}`}
                   style={{ backgroundColor: a.student.color }}
                 >
                   {a.seatNumber}
@@ -169,12 +277,13 @@ export default function GeneratorPage() {
                 </span>
               </>
             ) : (
-              <div className={`${emptyCircleClass} rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-500 border-2 border-white shadow-sm`}>
+              <div className={`${emptyCircleClass} rounded-full flex items-center justify-center font-bold border-2 border-white shadow-sm transition-all ${isDropTarget ? 'bg-blue-100 text-blue-500 ring-4 ring-blue-400 scale-110' : 'bg-gray-300 text-gray-500'}`}>
                 {a.seatNumber}
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </>
     );
   };
@@ -248,36 +357,56 @@ export default function GeneratorPage() {
 
         <div className="mt-4 flex gap-3">
           <button
-            onClick={generate}
+            onClick={handleGenerate}
             disabled={!selectedClass || !selectedRoom || generating}
             className="bg-lime-500 hover:bg-lime-600 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-30"
           >
             {generating ? 'Generiere...' : result ? 'Neu mischen' : 'Sitzplan generieren'}
           </button>
-          {result && (
-            <button
-              onClick={downloadPng}
-              className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors"
-            >
-              Als PNG herunterladen
-            </button>
-          )}
         </div>
       </div>
 
       {result && result.room && (
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">{className} – {roomName}</h2>
-            {!result.success && (
-              <span className="bg-yellow-100 text-yellow-700 text-xs font-medium px-3 py-1 rounded-full">
-                Nicht alle Regeln eingehalten
-              </span>
-            )}
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold">{className} – {roomName}</h2>
+              {!result.success && (
+                <span className="bg-yellow-100 text-yellow-700 text-xs font-medium px-3 py-1 rounded-full">
+                  Nicht alle Regeln eingehalten
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {absent.length > 0 && (
+                <button
+                  onClick={reshuffleWithoutAbsent}
+                  className="bg-lime-100 hover:bg-lime-200 text-lime-800 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+                >
+                  Neu mischen (nur Anwesende)
+                </button>
+              )}
+              <button
+                onClick={downloadPng}
+                className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                Als PNG herunterladen
+              </button>
+            </div>
           </div>
-          <div ref={planRef} className="relative bg-gray-100 rounded-lg overflow-hidden cursor-zoom-in" onClick={openLightbox} title="Klicken zum Vergrössern">
+          <div ref={planRef} className="relative bg-gray-100 rounded-lg overflow-hidden">
             {renderSeatingPlan('normal')}
           </div>
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs text-gray-400">
+              Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend.
+            </p>
+            <button onClick={openLightbox} className="text-sm text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1.5" title="Vergrössern">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" /></svg>
+              Vollbild
+            </button>
+          </div>
+          <AbsentList absent={absent} onReturn={handleReturnAbsent} />
         </div>
       )}
 

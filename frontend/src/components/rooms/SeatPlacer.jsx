@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import FloorplanSketch from './FloorplanSketch';
 
 const GRID_STEP = 2;
 const MIN_AREA_SIZE = 6;
@@ -11,6 +12,7 @@ function snapToGrid(val) {
 
 export default function SeatPlacer({
   imageUrl,
+  sketch = null,
   seats,
   onSeatsChange,
   mode = 'seats',
@@ -337,12 +339,21 @@ export default function SeatPlacer({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      <img
-        src={imageUrl}
-        alt="Grundriss"
-        className="floorplan-img w-full block pointer-events-none"
-        draggable={false}
-      />
+      {sketch ? (
+        <div
+          className="floorplan-img w-full block pointer-events-none"
+          style={{ aspectRatio: `${sketch.width} / ${sketch.height}` }}
+        >
+          <FloorplanSketch sketch={sketch} />
+        </div>
+      ) : (
+        <img
+          src={imageUrl}
+          alt="Grundriss"
+          className="floorplan-img w-full block pointer-events-none"
+          draggable={false}
+        />
+      )}
 
       {/* Raster-Overlay (nur in Sitzplatz-Modus) */}
       {mode === 'seats' && (
