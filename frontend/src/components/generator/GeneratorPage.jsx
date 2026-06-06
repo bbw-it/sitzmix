@@ -255,20 +255,22 @@ export default function GeneratorPage() {
           >
             {a.student ? (
               <>
-                {interactive && (
-                  <button
-                    className="export-hide absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white border border-gray-300 text-gray-500 hover:bg-red-50 hover:text-red-600 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    title="Als abwesend markieren"
-                    onClick={(e) => { e.stopPropagation(); handleMarkAbsent(i); }}
+                <div className="relative">
+                  {interactive && (
+                    <button
+                      className="export-hide absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white border border-gray-300 text-gray-500 hover:bg-red-50 hover:text-red-600 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      title="Als abwesend markieren"
+                      onClick={(e) => { e.stopPropagation(); handleMarkAbsent(i); }}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  )}
+                  <div
+                    className={`${circleClass} rounded-full flex items-center justify-center font-bold text-gray-800 shadow-md border-2 border-white transition-transform ${interactive ? 'cursor-grab active:cursor-grabbing group-hover:scale-110' : ''} ${isDropTarget ? 'ring-4 ring-blue-400 ring-offset-1 scale-110' : ''}`}
+                    style={{ backgroundColor: a.student.color }}
                   >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                )}
-                <div
-                  className={`${circleClass} rounded-full flex items-center justify-center font-bold text-gray-800 shadow-md border-2 border-white transition-transform ${interactive ? 'cursor-grab active:cursor-grabbing group-hover:scale-110' : ''} ${isDropTarget ? 'ring-4 ring-blue-400 ring-offset-1 scale-110' : ''}`}
-                  style={{ backgroundColor: a.student.color }}
-                >
-                  {a.seatNumber}
+                    {a.seatNumber}
+                  </div>
                 </div>
                 <span className={`mt-0.5 ${textClass} font-semibold text-gray-800 bg-white/95 px-1.5 py-0.5 rounded shadow-sm text-center leading-tight overflow-visible`}>
                   {a.student.name.includes(' ')
