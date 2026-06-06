@@ -18,8 +18,7 @@ export default function GeneratorPage() {
   const [absent, setAbsent] = useState([]);
   const [draggingIndex, setDraggingIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const [flipH, setFlipH] = useState(false);   // Spiegelung aus Schüler-Sicht
-  const [flipV, setFlipV] = useState(false);
+  const [studentView, setStudentView] = useState(false);   // false = Lehrpersonen-Sicht (Standard), true = Lernenden-Sicht (180°)
 
   // Drag-Zustand sicher aufräumen, egal wo der Drag endet (auch von der Abwesenden-Liste)
   useEffect(() => {
@@ -129,7 +128,7 @@ export default function GeneratorPage() {
     setResult(null);
     setSeats([]);
     setAbsent([]);
-    setFlipH(false); setFlipV(false);
+    setStudentView(false);
   };
 
   const handleRoomChange = (val) => {
@@ -139,7 +138,7 @@ export default function GeneratorPage() {
     setResult(null);
     setSeats([]);
     setAbsent([]);
-    setFlipH(false); setFlipV(false);
+    setStudentView(false);
     setFillMode(room?.hasAreas ? 'per_area' : 'sequential');
   };
 
@@ -208,7 +207,7 @@ export default function GeneratorPage() {
     const textClass = sizeVariant === 'large' ? 'text-xs' : 'text-[10px]';
 
     const sketch = result.room.floorplan_sketch;
-    const flipTransform = `scaleX(${flipH ? -1 : 1}) scaleY(${flipV ? -1 : 1})`;
+    const flipTransform = studentView ? 'scaleX(-1) scaleY(-1)' : 'none';
     return (
       <>
         {sketch ? (
@@ -241,8 +240,8 @@ export default function GeneratorPage() {
             key={a.seatId ?? i}
             className={`group absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 transition-opacity ${isDragSource ? 'opacity-30' : ''}`}
             style={{
-              left: `${flipH ? 100 - a.xPosition : a.xPosition}%`,
-              top: `${flipV ? 100 - a.yPosition : a.yPosition}%`,
+              left: `${studentView ? 100 - a.xPosition : a.xPosition}%`,
+              top: `${studentView ? 100 - a.yPosition : a.yPosition}%`,
             }}
             {...(interactive ? {
               draggable: !!a.student,
@@ -386,29 +385,20 @@ export default function GeneratorPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden" title="Ansicht aus Schüler-Sicht spiegeln">
-                <span className="text-xs text-gray-500 px-2.5 hidden sm:inline">Spiegeln</span>
+              <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm" title="Perspektive wechseln">
                 <button
-                  onClick={() => setFlipH(v => !v)}
-                  title="Horizontal spiegeln"
-                  aria-pressed={flipH}
-                  className={`px-3 py-2 transition-colors border-l border-gray-200 ${flipH ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setStudentView(false)}
+                  aria-pressed={!studentView}
+                  className={`px-3 py-2 font-medium transition-colors ${!studentView ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="3" x2="12" y2="21" strokeDasharray="3 3" />
-                    <path d="M9 8L5 12l4 4" /><path d="M15 8l4 4-4 4" />
-                  </svg>
+                  Lehrpersonen-Sicht
                 </button>
                 <button
-                  onClick={() => setFlipV(v => !v)}
-                  title="Vertikal spiegeln"
-                  aria-pressed={flipV}
-                  className={`px-3 py-2 transition-colors border-l border-gray-200 ${flipV ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setStudentView(true)}
+                  aria-pressed={studentView}
+                  className={`px-3 py-2 font-medium transition-colors border-l border-gray-200 ${studentView ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="3" y1="12" x2="21" y2="12" strokeDasharray="3 3" />
-                    <path d="M8 9l4-4 4 4" /><path d="M8 15l4 4 4-4" />
-                  </svg>
+                  Lernenden-Sicht
                 </button>
               </div>
               {absent.length > 0 && (
