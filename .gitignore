@@ -1,2 +1,14 @@
+# Abhängigkeiten & Builds
+node_modules/
+dist/
+
+# Secrets & lokale Konfiguration
+.env
+.env.*
+
+# Editor-/OS-Müll
 .DS_Store
+*.log
+
+# Lokale Dev-Tools (Vorschau)
 .claude/
