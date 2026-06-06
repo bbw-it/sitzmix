@@ -36,7 +36,8 @@ SitzMix verarbeitet **keine** personenbezogenen Daten auf dem Server. Klassenbez
 - **Abwesende markieren:** Lernende per `×`-Klick als abwesend setzen — der Platz wird frei, die Person landet in einer sichtbaren Abwesenden-Liste. Zurückholen per Klick (nächster freier Platz) oder per Drag auf einen freien Platz.
 - **Manuell umordnen:** Lernende per **Drag & Drop** verschieben oder tauschen — mit visuellem Feedback (Quelle wird transparent, Zielplatz hervorgehoben).
 - **Neu mischen (nur Anwesende):** neu generieren und dabei die Abwesenden auslassen.
-- Sitzplan als **PNG exportieren** oder in der **Vollbild-Lightbox** betrachten (zeigt immer den aktuell bearbeiteten Stand)
+- **Sicht spiegeln (Schüler-Perspektive):** Plan horizontal und/oder vertikal spiegeln — die Sitzordnung (wer neben wem sitzt) bleibt erhalten, Namen bleiben aufrecht und lesbar.
+- Sitzplan als **PNG exportieren** oder in der **Vollbild-Lightbox** betrachten (zeigt immer den aktuell bearbeiteten Stand inkl. Spiegelung)
 - Jederzeit neu mischen mit einem Klick
 
 ### Klassenverwaltung
