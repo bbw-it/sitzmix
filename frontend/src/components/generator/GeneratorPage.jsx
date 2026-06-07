@@ -28,6 +28,20 @@ export default function GeneratorPage() {
     return () => { window.removeEventListener('dragend', clear); window.removeEventListener('drop', clear); };
   }, []);
 
+  // Tastenkürzel: 'L' wechselt zwischen Lehrpersonen- und Lernenden-Sicht
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== 'l' && e.key !== 'L') return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      setStudentView(v => !v);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const [classes, setClasses] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -385,7 +399,7 @@ export default function GeneratorPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm" title="Perspektive wechseln">
+              <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm" title="Perspektive wechseln (Taste L)">
                 <button
                   onClick={() => setStudentView(false)}
                   aria-pressed={!studentView}
@@ -422,7 +436,7 @@ export default function GeneratorPage() {
           </div>
           <div className="mt-3 flex items-center justify-between">
             <p className="text-xs text-gray-400">
-              Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend.
+              Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive.
             </p>
             <button onClick={openLightbox} className="text-sm text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1.5" title="Vergrössern">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" /></svg>
