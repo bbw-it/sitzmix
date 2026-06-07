@@ -92,8 +92,23 @@ export default function GeneratorPage() {
   }, [lightboxOpen, closeLightbox]);
 
   useEffect(() => {
-    setClasses(listClasses());
-    setRooms(listRooms());
+    const classList = listClasses();
+    const roomList = listRooms();
+    setClasses(classList);
+    setRooms(roomList);
+    // Wenn nur ein Zimmer existiert: automatisch auswählen
+    if (roomList.length === 1) {
+      const room = roomList[0];
+      setSelectedRoom(room.id);
+      setRoomName(room.name);
+      setFillMode(room.hasAreas ? 'per_area' : 'sequential');
+    }
+    // Analog: nur eine Klasse → automatisch auswählen
+    if (classList.length === 1) {
+      const cls = classList[0];
+      setSelectedClass(cls.id);
+      setClassName(cls.name);
+    }
   }, []);
 
   // Grundriss-Bild des Ergebnisses als Object-URL auflösen
