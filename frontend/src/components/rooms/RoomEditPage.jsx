@@ -4,6 +4,7 @@ import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 import SeatPlacer from './SeatPlacer';
 import SketchEditor from './SketchEditor';
+import Button, { buttonClasses } from '../common/Button';
 import { validateSketchFile, toFileFormat } from '../../lib/sketch';
 
 const AREA_COLORS = [
@@ -316,23 +317,12 @@ export default function RoomEditPage() {
               Nicht gespeichert
             </span>
           )}
-          <button
-            onClick={() => navigate('/rooms')}
-            className="bg-lime-100 hover:bg-lime-200 text-lime-800 font-medium py-2.5 px-5 rounded-lg text-sm transition-colors"
-          >
+          <Button variant="ghost" onClick={() => navigate('/rooms')}>
             Abbrechen
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`font-medium py-2.5 px-5 rounded-lg text-sm transition-colors disabled:opacity-50 ${
-              isDirty
-                ? 'bg-lime-600 hover:bg-lime-700 text-white'
-                : 'bg-gray-900 hover:bg-gray-800 text-white'
-            }`}
-          >
-            {saving ? 'Speichern...' : 'Speichern'}
-          </button>
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'Speichern…' : 'Speichern'}
+          </Button>
         </div>
       </div>
 
@@ -351,7 +341,7 @@ export default function RoomEditPage() {
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">Grundriss</label>
             <div className="flex gap-2 flex-wrap">
-              <label className="cursor-pointer bg-lime-100 hover:bg-lime-200 text-lime-800 font-medium py-2.5 px-4 rounded-lg text-sm transition-colors">
+              <label className={`${buttonClasses({ variant: 'outline' })} cursor-pointer ${(!roomId || uploading) ? 'opacity-40 cursor-not-allowed' : ''}`}>
                 {uploading ? 'Lade…' : 'Bild / JSON auswählen…'}
                 <input
                   type="file"
@@ -361,28 +351,18 @@ export default function RoomEditPage() {
                   disabled={!roomId || uploading}
                 />
               </label>
-              <button
-                onClick={() => setSketchEditorOpen(true)}
-                disabled={!roomId}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-40"
-              >
+              <Button variant="outline" onClick={() => setSketchEditorOpen(true)} disabled={!roomId}>
                 {room?.floorplan_sketch ? 'Skizze bearbeiten' : 'Grundriss skizzieren'}
-              </button>
+              </Button>
               {room?.floorplan_sketch && (
-                <button
-                  onClick={downloadSketchJson}
-                  className="text-gray-600 hover:text-gray-800 font-medium py-2.5 px-3 text-sm transition-colors"
-                >
+                <Button variant="ghost" onClick={downloadSketchJson}>
                   Als JSON speichern
-                </button>
+                </Button>
               )}
               {(room?.floorplan_image_path || room?.floorplan_sketch) && (
-                <button
-                  onClick={handleRemoveImage}
-                  className="text-red-500 hover:text-red-600 font-medium py-2.5 px-3 text-sm transition-colors"
-                >
+                <Button variant="danger" onClick={handleRemoveImage}>
                   Entfernen
-                </button>
+                </Button>
               )}
             </div>
             {room?.floorplan_image_path && room?.image_width > 0 && (
@@ -421,16 +401,12 @@ export default function RoomEditPage() {
               </span>
             </div>
             {seats.length > 0 && (
-              <button
-                onClick={alignSeats}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 text-sm transition-colors"
-                title="Sitzplätze am Raster ausrichten"
-              >
+              <Button variant="outline" size="sm" onClick={alignSeats} title="Sitzplätze am Raster ausrichten">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
                 Ausrichten
-              </button>
+              </Button>
             )}
           </div>
 

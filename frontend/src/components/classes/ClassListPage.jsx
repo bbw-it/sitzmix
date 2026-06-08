@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
+import Button from '../common/Button';
 
 export default function ClassListPage() {
   const { listClasses, createClass, deleteClass } = useStore();
@@ -41,12 +42,9 @@ export default function ClassListPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Klassen verwalten</h1>
-        <button
-          onClick={handleCreate}
-          className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-5 rounded-lg text-sm transition-colors"
-        >
+        <Button variant="secondary" onClick={handleCreate}>
           + Neue Klasse
-        </button>
+        </Button>
       </div>
 
       {classes.length === 0 ? (
@@ -66,18 +64,12 @@ export default function ClassListPage() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => navigate(`/classes/${cls.id}`)}
-                  className="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-                >
+                <Button variant="outline" size="sm" onClick={() => navigate(`/classes/${cls.id}`)}>
                   Bearbeiten
-                </button>
-                <button
-                  onClick={() => handleDelete(cls.id, cls.name)}
-                  className="border border-red-200 hover:bg-red-50 text-red-500 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-                >
+                </Button>
+                <Button variant="danger-outline" size="sm" onClick={() => handleDelete(cls.id, cls.name)}>
                   Löschen
-                </button>
+                </Button>
               </div>
             </div>
           ))}

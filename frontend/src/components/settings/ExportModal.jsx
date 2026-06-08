@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store/StoreProvider';
 import { buildExport } from '../../lib/exportImport';
+import Button from '../common/Button';
 
 export default function ExportModal({ onClose }) {
   const { listClasses, listRooms } = useStore();
@@ -184,19 +185,12 @@ export default function ExportModal({ onClose }) {
         </div>
 
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-          <button
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-            onClick={onClose}
-          >
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Abbrechen
-          </button>
-          <button
-            className="px-4 py-2 text-sm font-medium text-white bg-lime-600 hover:bg-lime-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!hasSelection || exporting}
-            onClick={handleExport}
-          >
-            {exporting ? 'Exportiere...' : 'Exportieren'}
-          </button>
+          </Button>
+          <Button variant="primary" size="sm" disabled={!hasSelection || exporting} onClick={handleExport}>
+            {exporting ? 'Exportiere…' : 'Exportieren'}
+          </Button>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { toPng } from 'html-to-image';
 import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 import SearchableSelect from '../common/SearchableSelect';
+import Button from '../common/Button';
 import FloorplanSketch from '../rooms/FloorplanSketch';
 import AbsentList from './AbsentList';
 import { swapOrMove, markAbsent, placeStudent, nextFreeSeatIndex } from '../../lib/seatingPlan';
@@ -412,13 +413,13 @@ export default function GeneratorPage() {
 
         {!result && (
           <div className="mt-4 flex gap-3">
-            <button
+            <Button
+              variant="primary"
               onClick={handleGenerate}
               disabled={!selectedClass || !selectedRoom || generating}
-              className="bg-lime-500 hover:bg-lime-600 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-30"
             >
-              {generating ? 'Generiere...' : 'Sitzplan generieren'}
-            </button>
+              {generating ? 'Generiere…' : 'Sitzplan generieren'}
+            </Button>
           </div>
         )}
       </div>
@@ -435,13 +436,9 @@ export default function GeneratorPage() {
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="bg-lime-500 hover:bg-lime-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-30"
-              >
+              <Button variant="primary" size="sm" onClick={handleGenerate} disabled={generating}>
                 {generating ? 'Generiere…' : 'Neu mischen'}
-              </button>
+              </Button>
               <div className="inline-flex items-center rounded-full bg-gray-100 p-1 text-sm" title="Perspektive wechseln (Taste L)">
                 <button
                   onClick={() => setStudentView(false)}
@@ -459,19 +456,13 @@ export default function GeneratorPage() {
                 </button>
               </div>
               {absent.length > 0 && (
-                <button
-                  onClick={reshuffleWithoutAbsent}
-                  className="bg-lime-100 hover:bg-lime-200 text-lime-800 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-                >
+                <Button variant="outline" size="sm" onClick={reshuffleWithoutAbsent}>
                   Neu mischen (nur Anwesende)
-                </button>
+                </Button>
               )}
-              <button
-                onClick={downloadPng}
-                className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-              >
+              <Button variant="secondary" size="sm" onClick={downloadPng}>
                 Als PNG herunterladen
-              </button>
+              </Button>
             </div>
           </div>
           <div ref={planRef} className="relative bg-gray-100 rounded-lg overflow-hidden">
@@ -481,10 +472,10 @@ export default function GeneratorPage() {
             <p className="text-xs text-gray-400">
               Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive.
             </p>
-            <button onClick={openLightbox} className="text-sm text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1.5" title="Vergrössern">
+            <Button variant="ghost" size="sm" onClick={openLightbox} className="!text-gray-500" title="Vergrössern">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" /></svg>
               Vollbild
-            </button>
+            </Button>
           </div>
           <AbsentList absent={absent} onReturn={handleReturnAbsent} />
         </div>

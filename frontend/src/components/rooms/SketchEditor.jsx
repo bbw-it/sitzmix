@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { createRectangle, createCircle, insertVertex, removeVertex, moveVertex, toFileFormat } from '../../lib/sketch';
+import Button from '../common/Button';
 
 export default function SketchEditor({ initialSketch, onSave, onClose }) {
   const width = initialSketch?.width || 1000;
@@ -77,9 +78,9 @@ export default function SketchEditor({ initialSketch, onSave, onClose }) {
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-lg font-bold text-gray-900">Grundriss skizzieren</h2>
           <div className="flex items-center gap-2">
-            <button onClick={addRect} className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">+ Rechteck</button>
-            <button onClick={addCircle} className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">+ Kreis</button>
-            <button onClick={saveJson} className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Als JSON speichern</button>
+            <Button variant="outline" size="sm" onClick={addRect}>+ Rechteck</Button>
+            <Button variant="outline" size="sm" onClick={addCircle}>+ Kreis</Button>
+            <Button variant="outline" size="sm" onClick={saveJson}>Als JSON speichern</Button>
           </div>
         </div>
 
@@ -145,11 +146,13 @@ export default function SketchEditor({ initialSketch, onSave, onClose }) {
         </div>
 
         <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
-          <button onClick={() => { if (selectedId) { setShapes(list => list.filter(s => s.id !== selectedId)); setSelectedId(null); } }}
-            disabled={!selectedId} className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-30">Form löschen</button>
+          <Button variant="danger" size="sm" disabled={!selectedId}
+            onClick={() => { if (selectedId) { setShapes(list => list.filter(s => s.id !== selectedId)); setSelectedId(null); } }}>
+            Form löschen
+          </Button>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Abbrechen</button>
-            <button onClick={() => onSave({ version: 1, width, height, shapes })} className="px-4 py-2 text-sm font-medium text-white bg-lime-600 hover:bg-lime-700 rounded-lg">Fertig</button>
+            <Button variant="ghost" size="sm" onClick={onClose}>Abbrechen</Button>
+            <Button variant="primary" size="sm" onClick={() => onSave({ version: 1, width, height, shapes })}>Fertig</Button>
           </div>
         </div>
       </div>

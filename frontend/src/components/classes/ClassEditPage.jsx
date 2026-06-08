@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
+import Button from '../common/Button';
 
 const PASTEL_COLORS = [
   '#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9',
@@ -139,23 +140,12 @@ export default function ClassEditPage() {
               Nicht gespeichert
             </span>
           )}
-          <button
-            onClick={() => navigate('/classes')}
-            className="bg-lime-100 hover:bg-lime-200 text-lime-800 font-medium py-2.5 px-5 rounded-lg text-sm transition-colors"
-          >
+          <Button variant="ghost" onClick={() => navigate('/classes')}>
             Abbrechen
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`font-medium py-2.5 px-5 rounded-lg text-sm transition-colors disabled:opacity-50 ${
-              isDirty
-                ? 'bg-lime-600 hover:bg-lime-700 text-white'
-                : 'bg-gray-900 hover:bg-gray-800 text-white'
-            }`}
-          >
-            {saving ? 'Speichern...' : 'Speichern'}
-          </button>
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'Speichern…' : 'Speichern'}
+          </Button>
         </div>
       </div>
 
@@ -243,13 +233,14 @@ export default function ClassEditPage() {
                     rows={5}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                   />
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={bulkImport}
                     disabled={!bulkText.trim()}
-                    className="mt-3 w-full bg-lime-500 hover:bg-lime-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-30"
+                    className="mt-3 w-full"
                   >
                     Hinzufügen
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -323,13 +314,14 @@ export default function ClassEditPage() {
                         ))}
                       </select>
                     </div>
-                    <button
+                    <Button
+                      variant="secondary"
                       onClick={handleAddRule}
                       disabled={!ruleA || !ruleB || ruleA === ruleB}
-                      className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-30"
+                      className="w-full"
                     >
                       Regel hinzufügen
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
