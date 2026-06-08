@@ -154,7 +154,8 @@ export default function GeneratorPage() {
     }
     setGenerating(true);
     try {
-      const payload = { classId: selectedClass, roomId: selectedRoom };
+      // Abwesende bleiben abwesend, auch beim Neu-Mischen.
+      const payload = { classId: selectedClass, roomId: selectedRoom, absentIds: absent.map(s => s.id) };
       if (selectedRoomHasAreas && fillMode === 'per_area') {
         payload.fillMode = 'per_area';
         payload.personsPerArea = personsPerArea;
@@ -163,7 +164,6 @@ export default function GeneratorPage() {
       const res = generate(payload);
       setResult(res);
       setSeats(res.assignments.map(a => ({ ...a })));
-      setAbsent([]);   // regulär = alle wieder anwesend
       if (res.warning) showToast(res.warning, 'warning');
     } catch (err) {
       showToast(err.message || 'Fehler beim Generieren', 'error');
@@ -220,17 +220,6 @@ export default function GeneratorPage() {
     const idx = nextFreeSeatIndex(seats);
     if (idx === -1) { showToast('Kein freier Platz vorhanden', 'warning'); return; }
     handleAbsentDropOnSeat(idx, studentId);
-  };
-
-  const reshuffleWithoutAbsent = () => {
-    try {
-      const payload = { classId: selectedClass, roomId: selectedRoom, absentIds: absent.map(s => s.id) };
-      if (selectedRoomHasAreas && fillMode === 'per_area') { payload.fillMode = 'per_area'; payload.personsPerArea = personsPerArea; }
-      const res = generate(payload);
-      setResult(res);
-      setSeats(res.assignments.map(a => ({ ...a })));   // absent bleibt erhalten
-      if (res.warning) showToast(res.warning, 'warning');
-    } catch (e) { showToast(e.message || 'Fehler beim Generieren', 'error'); }
   };
 
   const downloadPng = async () => {
@@ -478,11 +467,6 @@ export default function GeneratorPage() {
                   Lernenden-Sicht
                 </button>
               </div>
-              {absent.length > 0 && (
-                <Button variant="outline" size="sm" onClick={reshuffleWithoutAbsent}>
-                  Neu mischen (nur Anwesende)
-                </Button>
-              )}
               <Button variant="secondary" size="sm" onClick={downloadPng}>
                 Als PNG herunterladen
               </Button>
