@@ -379,7 +379,7 @@ export default function GeneratorPage() {
             <div className="flex flex-wrap items-stretch gap-3">
               {(() => {
                 const frame = (active) =>
-                  `flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
+                  `flex items-center gap-2.5 px-4 h-12 rounded-lg border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
                     active ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`;
                 const radio = (active) => (
@@ -422,7 +422,7 @@ export default function GeneratorPage() {
                             max="20"
                             value={personsPerArea}
                             onChange={(e) => setPersonsPerArea(parseInt(e.target.value) || 1)}
-                            className="w-14 border border-lime-300 bg-white rounded-md px-2 py-1 text-center text-gray-900 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                            className="w-14 h-8 border border-lime-300 bg-white rounded-md px-2 text-center text-gray-900 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                           />
                           <span className="font-normal text-lime-700">Personen pro Bereich</span>
                         </span>
