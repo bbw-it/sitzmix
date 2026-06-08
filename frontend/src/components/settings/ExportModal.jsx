@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store/StoreProvider';
 import { buildExport } from '../../lib/exportImport';
+import { acknowledgeExport } from '../../lib/store';
 import Button from '../common/Button';
 
 export default function ExportModal({ onClose }) {
@@ -66,6 +67,7 @@ export default function ExportModal({ onClose }) {
       a.download = `sitzmix-export-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
+      acknowledgeExport();   // Backup gemacht → Hinweis-Banner ausblenden
       onClose();
     } catch (err) {
       console.error('Export failed:', err);

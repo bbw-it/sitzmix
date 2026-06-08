@@ -9,7 +9,36 @@ let state = { schemaVersion: 2, classes: [], rooms: [] };
 export function _setState(s) { state = s; }            // nur für Tests/Provider
 export function getState() { return state; }
 
-async function persist() { await saveSnapshot(state); }
+// ── Export-Erinnerung ──────────────────────────────────────
+// Nach jeder Daten-Mutation wird "Export ausstehend" gesetzt → der Hinweis-Banner
+// erscheint wieder. Wegklicken oder Exportieren quittiert das.
+const EXPORT_FLAG = 'sitzmix-export-pending';
+const listeners = new Set();
+
+// In-Memory ist die Wahrheit; localStorage nur zur Persistenz über Reloads hinweg.
+let exportPending = true;
+try { if (localStorage.getItem(EXPORT_FLAG) === '0') exportPending = false; } catch { /* ignore */ }
+
+export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
+function notify() { listeners.forEach(l => l()); }
+
+export function isExportPending() { return exportPending; }
+
+export function acknowledgeExport() {
+  exportPending = false;
+  try { localStorage.setItem(EXPORT_FLAG, '0'); } catch { /* ignore */ }
+  notify();
+}
+function markExportPending() {
+  exportPending = true;
+  try { localStorage.setItem(EXPORT_FLAG, '1'); } catch { /* ignore */ }
+  notify();
+}
+
+async function persist() {
+  await saveSnapshot(state);
+  markExportPending();
+}
 
 export async function loadFromDb() {
   const snap = await getSnapshot();

@@ -43,6 +43,15 @@ describe('class store', () => {
     await expect(store.addRule(c.id, { studentAId: b.id, studentBId: a.id })).rejects.toThrow();
   });
 
+  it('flags export pending after a mutation, cleared by acknowledge', async () => {
+    store.acknowledgeExport();
+    expect(store.isExportPending()).toBe(false);
+    await store.createClass({ name: 'x' });
+    expect(store.isExportPending()).toBe(true);
+    store.acknowledgeExport();
+    expect(store.isExportPending()).toBe(false);
+  });
+
   it('persists across reload', async () => {
     await store.createClass({ name: 'Persist' });
     store._setState({ schemaVersion: 2, classes: [], rooms: [] });

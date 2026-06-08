@@ -1,17 +1,17 @@
-import { useState } from 'react';
-
-const STORAGE_KEY = 'sitzmix-privacy-banner-dismissed';
+import { useState, useEffect } from 'react';
+import { isExportPending, acknowledgeExport, subscribe } from '../../lib/store';
 
 export default function PrivacyBanner() {
-  const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch { return false; }
-  });
+  const [visible, setVisible] = useState(() => isExportPending());
 
-  if (dismissed) return null;
+  // Erscheint nach jeder Datenänderung wieder (Store benachrichtigt)
+  useEffect(() => subscribe(() => setVisible(isExportPending())), []);
+
+  if (!visible) return null;
 
   const close = () => {
-    try { localStorage.setItem(STORAGE_KEY, '1'); } catch { /* ignore */ }
-    setDismissed(true);
+    acknowledgeExport();
+    setVisible(false);
   };
 
   return (
