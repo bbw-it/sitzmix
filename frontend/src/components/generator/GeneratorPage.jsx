@@ -432,7 +432,8 @@ export default function GeneratorPage() {
 
       {result && result.room && (
         <div ref={resultRef} className="bg-white border border-gray-200 rounded-xl px-6 pb-6 scroll-mt-4">
-          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur -mx-6 px-6 pt-5 pb-3 mb-4 border-b border-gray-100 rounded-t-xl flex items-center justify-between gap-3 flex-wrap">
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur -mx-6 px-6 pt-5 pb-3 mb-4 border-b border-gray-100 rounded-t-xl">
+           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold">{className} – {roomName}</h2>
               {!result.success && (
@@ -470,6 +471,12 @@ export default function GeneratorPage() {
                 Als PNG herunterladen
               </Button>
             </div>
+           </div>
+           {absent.length > 0 && (
+             <div className="mt-3 pt-3 border-t border-gray-100">
+               <AbsentList absent={absent} onReturn={handleReturnAbsent} />
+             </div>
+           )}
           </div>
           <div ref={planRef} className="relative bg-gray-100 rounded-lg overflow-hidden">
             {renderSeatingPlan('normal')}
@@ -484,7 +491,6 @@ export default function GeneratorPage() {
           <p className="mt-3 text-xs text-gray-400">
             Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive · <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">F</kbd> öffnet das Vollbild.
           </p>
-          <AbsentList absent={absent} onReturn={handleReturnAbsent} />
         </div>
       )}
 
