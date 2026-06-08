@@ -342,10 +342,10 @@ export default function RoomEditPage() {
             <label className="block text-sm font-bold text-gray-900 mb-2">Grundriss</label>
             <div className="flex gap-2 flex-wrap">
               <label className={`${buttonClasses({ variant: 'outline' })} cursor-pointer ${(!roomId || uploading) ? 'opacity-40 cursor-not-allowed' : ''}`}>
-                {uploading ? 'Lade…' : 'Bild / JSON auswählen…'}
+                {uploading ? 'Lade…' : 'Datei auswählen'}
                 <input
                   type="file"
-                  accept="image/png,image/jpeg,application/json,.json"
+                  accept="image/*,application/json,.json"
                   className="hidden"
                   onChange={e => e.target.files[0] && handleUpload(e.target.files[0])}
                   disabled={!roomId || uploading}
