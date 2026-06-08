@@ -435,17 +435,15 @@ export default function GeneratorPage() {
           </div>
         )}
 
-        {!result && (
-          <div className="mt-4 flex gap-3">
-            <Button
-              variant="primary"
-              onClick={handleGenerate}
-              disabled={!selectedClass || !selectedRoom || generating}
-            >
-              {generating ? 'Generiere…' : 'Sitzplan generieren'}
-            </Button>
-          </div>
-        )}
+        <div className="mt-4 flex gap-3">
+          <Button
+            variant="primary"
+            onClick={handleGenerate}
+            disabled={!selectedClass || !selectedRoom || generating}
+          >
+            {generating ? 'Generiere…' : 'Sitzplan generieren'}
+          </Button>
+        </div>
       </div>
 
       {result && result.room && (
