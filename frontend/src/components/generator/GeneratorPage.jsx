@@ -13,6 +13,8 @@ export default function GeneratorPage() {
   const planRef = useRef(null);
   const lightboxRef = useRef(null);
   const dragIndexRef = useRef(null);
+  const resultRef = useRef(null);
+  const shouldScrollRef = useRef(false);
   const [planImageUrl, setPlanImageUrl] = useState(null);
   const [seats, setSeats] = useState([]);   // bearbeitbare Kopie von result.assignments
   const [absent, setAbsent] = useState([]);
@@ -113,6 +115,15 @@ export default function GeneratorPage() {
     }
   }, []);
 
+  // Nach dem ersten Generieren sanft zum Plan scrollen (kurze Verzögerung, damit
+  // der Grundriss geladen ist und die Seite ihre volle Höhe erreicht hat)
+  useEffect(() => {
+    if (result && shouldScrollRef.current) {
+      shouldScrollRef.current = false;
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+    }
+  }, [result]);
+
   // Grundriss-Bild des Ergebnisses als Object-URL auflösen
   useEffect(() => {
     let active = true;
@@ -141,6 +152,7 @@ export default function GeneratorPage() {
         payload.fillMode = 'per_area';
         payload.personsPerArea = personsPerArea;
       }
+      if (!result) shouldScrollRef.current = true;   // beim ersten Generieren zum Plan scrollen
       const res = generate(payload);
       setResult(res);
       setSeats(res.assignments.map(a => ({ ...a })));
@@ -398,20 +410,22 @@ export default function GeneratorPage() {
           </div>
         )}
 
-        <div className="mt-4 flex gap-3">
-          <button
-            onClick={handleGenerate}
-            disabled={!selectedClass || !selectedRoom || generating}
-            className="bg-lime-500 hover:bg-lime-600 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-30"
-          >
-            {generating ? 'Generiere...' : result ? 'Neu mischen' : 'Sitzplan generieren'}
-          </button>
-        </div>
+        {!result && (
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={handleGenerate}
+              disabled={!selectedClass || !selectedRoom || generating}
+              className="bg-lime-500 hover:bg-lime-600 text-white font-medium py-2.5 px-6 rounded-lg text-sm transition-colors disabled:opacity-30"
+            >
+              {generating ? 'Generiere...' : 'Sitzplan generieren'}
+            </button>
+          </div>
+        )}
       </div>
 
       {result && result.room && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+        <div ref={resultRef} className="bg-white border border-gray-200 rounded-xl px-6 pb-6 scroll-mt-4">
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur -mx-6 px-6 pt-5 pb-3 mb-4 border-b border-gray-100 rounded-t-xl flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold">{className} – {roomName}</h2>
               {!result.success && (
@@ -420,7 +434,14 @@ export default function GeneratorPage() {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="bg-lime-500 hover:bg-lime-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors disabled:opacity-30"
+              >
+                {generating ? 'Generiere…' : 'Neu mischen'}
+              </button>
               <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm" title="Perspektive wechseln (Taste L)">
                 <button
                   onClick={() => setStudentView(false)}
