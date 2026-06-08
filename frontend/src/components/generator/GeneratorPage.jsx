@@ -81,20 +81,26 @@ export default function GeneratorPage() {
     };
   }, [lightboxOpen, closeLightbox]);
 
-  // Tastenkürzel: 'L' wechselt die Perspektive (im Vollbild die Vollbild-Sicht, sonst die Normalansicht)
+  // Tastenkürzel: 'L' wechselt die Perspektive, 'F' öffnet/schliesst das Vollbild
   useEffect(() => {
     const onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key !== 'l' && e.key !== 'L') return;
       const t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      e.preventDefault();
-      if (lightboxOpen) setLightboxStudentView(v => !v);
-      else setStudentView(v => !v);
+      if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
+        if (lightboxOpen) setLightboxStudentView(v => !v);
+        else setStudentView(v => !v);
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!result) return;
+        e.preventDefault();
+        if (lightboxOpen) closeLightbox();
+        else openLightbox();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [lightboxOpen]);
+  }, [lightboxOpen, result, closeLightbox]);
 
   useEffect(() => {
     const classList = listClasses();
@@ -469,14 +475,14 @@ export default function GeneratorPage() {
             {renderSeatingPlan('normal')}
             <button
               onClick={openLightbox}
-              title="Vollbild"
+              title="Vollbild (Taste F)"
               className="export-hide absolute top-2 right-2 z-20 bg-white/85 hover:bg-white text-gray-700 hover:text-gray-900 rounded-lg p-2 shadow-sm backdrop-blur transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" /></svg>
             </button>
           </div>
           <p className="mt-3 text-xs text-gray-400">
-            Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive.
+            Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive · <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">F</kbd> öffnet das Vollbild.
           </p>
           <AbsentList absent={absent} onReturn={handleReturnAbsent} />
         </div>
