@@ -442,18 +442,18 @@ export default function GeneratorPage() {
               >
                 {generating ? 'Generiere…' : 'Neu mischen'}
               </button>
-              <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm" title="Perspektive wechseln (Taste L)">
+              <div className="inline-flex items-center rounded-full bg-gray-100 p-1 text-sm" title="Perspektive wechseln (Taste L)">
                 <button
                   onClick={() => setStudentView(false)}
                   aria-pressed={!studentView}
-                  className={`px-3 py-2 font-medium transition-colors ${!studentView ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  className={`px-4 py-1.5 rounded-full transition-all ${!studentView ? 'bg-white text-gray-900 font-semibold shadow-sm' : 'text-gray-500 font-medium hover:text-gray-700'}`}
                 >
                   Lehrpersonen-Sicht
                 </button>
                 <button
                   onClick={() => setStudentView(true)}
                   aria-pressed={studentView}
-                  className={`px-3 py-2 font-medium transition-colors border-l border-gray-200 ${studentView ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  className={`px-4 py-1.5 rounded-full transition-all ${studentView ? 'bg-white text-gray-900 font-semibold shadow-sm' : 'text-gray-500 font-medium hover:text-gray-700'}`}
                 >
                   Lernenden-Sicht
                 </button>
