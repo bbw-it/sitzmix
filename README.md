@@ -146,7 +146,6 @@ sitzmix/
 ├── Dockerfile                  # Multi-Stage: Vite-Build → Nginx
 ├── nginx.conf                  # Statisches Hosting + SPA-Fallback
 ├── setup.sh                    # Deployment-Skript (idempotent)
-├── docs/                       # Design-Specs & Implementierungspläne
 └── frontend/
     ├── vite.config.js
     ├── vitest.config.js
