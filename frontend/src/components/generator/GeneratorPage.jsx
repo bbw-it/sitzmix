@@ -376,10 +376,10 @@ export default function GeneratorPage() {
         {selectedRoomHasAreas && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <label className="block text-sm font-bold text-gray-900 mb-2">Belegungsregel</label>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-stretch gap-3">
               {(() => {
                 const frame = (active) =>
-                  `flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                  `flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
                     active ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`;
                 const radio = (active) => (
