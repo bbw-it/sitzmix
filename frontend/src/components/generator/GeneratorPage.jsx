@@ -377,42 +377,60 @@ export default function GeneratorPage() {
           <div className="mt-4 pt-4 border-t border-gray-100">
             <label className="block text-sm font-bold text-gray-900 mb-2">Belegungsregel</label>
             <div className="flex flex-wrap items-center gap-3">
-              {[
-                { value: 'sequential', label: 'Alle Plätze auffüllen' },
-                { value: 'per_area', label: 'Pro Bereich' },
-              ].map(opt => {
-                const active = fillMode === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setFillMode(opt.value)}
-                    aria-pressed={active}
-                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-                      active ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${active ? 'border-lime-600' : 'border-gray-300'}`}>
-                      {active && <span className="w-2 h-2 rounded-full bg-lime-600" />}
-                    </span>
-                    {opt.label}
-                  </button>
+              {(() => {
+                const frame = (active) =>
+                  `flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                    active ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`;
+                const radio = (active) => (
+                  <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${active ? 'border-lime-600' : 'border-gray-300'}`}>
+                    {active && <span className="w-2 h-2 rounded-full bg-lime-600" />}
+                  </span>
                 );
-              })}
+                const seqActive = fillMode === 'sequential';
+                const areaActive = fillMode === 'per_area';
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setFillMode('sequential')}
+                      aria-pressed={seqActive}
+                      className={frame(seqActive)}
+                    >
+                      {radio(seqActive)}
+                      Alle Plätze auffüllen
+                    </button>
 
-              {fillMode === 'per_area' && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={personsPerArea}
-                    onChange={(e) => setPersonsPerArea(parseInt(e.target.value) || 1)}
-                    className="w-16 border border-gray-300 rounded-lg px-2 py-1.5 text-center focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
-                  />
-                  <span>Personen pro Bereich</span>
-                </div>
-              )}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={areaActive}
+                      onClick={() => setFillMode('per_area')}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFillMode('per_area'); } }}
+                      className={`${frame(areaActive)} cursor-pointer`}
+                    >
+                      {radio(areaActive)}
+                      Pro Bereich
+                      {areaActive && (
+                        <span
+                          className="flex items-center gap-2 ml-1 pl-3 border-l border-lime-300"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={personsPerArea}
+                            onChange={(e) => setPersonsPerArea(parseInt(e.target.value) || 1)}
+                            className="w-14 border border-lime-300 bg-white rounded-md px-2 py-1 text-center text-gray-900 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                          />
+                          <span className="font-normal text-lime-700">Personen pro Bereich</span>
+                        </span>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
