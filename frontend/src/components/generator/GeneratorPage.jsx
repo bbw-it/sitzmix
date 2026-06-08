@@ -18,7 +18,8 @@ export default function GeneratorPage() {
   const [absent, setAbsent] = useState([]);
   const [draggingIndex, setDraggingIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const [studentView, setStudentView] = useState(false);   // false = Lehrpersonen-Sicht (Standard), true = Lernenden-Sicht (180°)
+  const [studentView, setStudentView] = useState(false);   // Normalansicht: false = Lehrpersonen-Sicht (Standard)
+  const [lightboxStudentView, setLightboxStudentView] = useState(true);   // Vollbild: startet in Lernenden-Sicht
 
   // Drag-Zustand sicher aufräumen, egal wo der Drag endet (auch von der Abwesenden-Liste)
   useEffect(() => {
@@ -26,20 +27,6 @@ export default function GeneratorPage() {
     window.addEventListener('dragend', clear);
     window.addEventListener('drop', clear);
     return () => { window.removeEventListener('dragend', clear); window.removeEventListener('drop', clear); };
-  }, []);
-
-  // Tastenkürzel: 'L' wechselt zwischen Lehrpersonen- und Lernenden-Sicht
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key !== 'l' && e.key !== 'L') return;
-      const t = e.target;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      e.preventDefault();
-      setStudentView(v => !v);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const [classes, setClasses] = useState([]);
@@ -55,7 +42,7 @@ export default function GeneratorPage() {
   const [fillMode, setFillMode] = useState('sequential');
   const [personsPerArea, setPersonsPerArea] = useState(3);
 
-  const openLightbox = () => setLightboxOpen(true);
+  const openLightbox = () => { setLightboxStudentView(true); setLightboxOpen(true); };   // Vollbild standardmässig in Lernenden-Sicht
 
   const closeLightbox = useCallback(() => {
     if (document.fullscreenElement) {
@@ -90,6 +77,21 @@ export default function GeneratorPage() {
       document.removeEventListener('fullscreenchange', handleFsChange);
     };
   }, [lightboxOpen, closeLightbox]);
+
+  // Tastenkürzel: 'L' wechselt die Perspektive (im Vollbild die Vollbild-Sicht, sonst die Normalansicht)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== 'l' && e.key !== 'L') return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      if (lightboxOpen) setLightboxStudentView(v => !v);
+      else setStudentView(v => !v);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightboxOpen]);
 
   useEffect(() => {
     const classList = listClasses();
@@ -236,7 +238,8 @@ export default function GeneratorPage() {
     const textClass = sizeVariant === 'large' ? 'text-xs' : 'text-[10px]';
 
     const sketch = result.room.floorplan_sketch;
-    const flipTransform = studentView ? 'scaleX(-1) scaleY(-1)' : 'none';
+    const flipped = sizeVariant === 'large' ? lightboxStudentView : studentView;
+    const flipTransform = flipped ? 'scaleX(-1) scaleY(-1)' : 'none';
     return (
       <>
         {sketch ? (
@@ -269,8 +272,8 @@ export default function GeneratorPage() {
             key={a.seatId ?? i}
             className={`group absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 transition-opacity ${isDragSource ? 'opacity-30' : ''}`}
             style={{
-              left: `${studentView ? 100 - a.xPosition : a.xPosition}%`,
-              top: `${studentView ? 100 - a.yPosition : a.yPosition}%`,
+              left: `${flipped ? 100 - a.xPosition : a.xPosition}%`,
+              top: `${flipped ? 100 - a.yPosition : a.yPosition}%`,
             }}
             {...(interactive ? {
               draggable: !!a.student,
@@ -476,7 +479,12 @@ export default function GeneratorPage() {
           onClick={(e) => { if (e.target === e.currentTarget) closeLightbox(); }}
         >
           <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 py-3 bg-gradient-to-b from-black/60 to-transparent z-10">
-            <h3 className="text-white font-semibold text-sm">{className} – {roomName}</h3>
+            <h3 className="text-white font-semibold text-sm">
+              {className} – {roomName}
+              <span className="ml-2 font-normal text-white/70">
+                · {lightboxStudentView ? 'Lernenden-Sicht' : 'Lehrpersonen-Sicht'} (Taste L)
+              </span>
+            </h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleFullscreen}
