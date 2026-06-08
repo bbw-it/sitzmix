@@ -467,16 +467,17 @@ export default function GeneratorPage() {
           </div>
           <div ref={planRef} className="relative bg-gray-100 rounded-lg overflow-hidden">
             {renderSeatingPlan('normal')}
+            <button
+              onClick={openLightbox}
+              title="Vollbild"
+              className="export-hide absolute top-2 right-2 z-20 bg-white/85 hover:bg-white text-gray-700 hover:text-gray-900 rounded-lg p-2 shadow-sm backdrop-blur transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" /></svg>
+            </button>
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <p className="text-xs text-gray-400">
-              Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive.
-            </p>
-            <Button variant="ghost" size="sm" onClick={openLightbox} className="!text-gray-500" title="Vergrössern">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" /></svg>
-              Vollbild
-            </Button>
-          </div>
+          <p className="mt-3 text-xs text-gray-400">
+            Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive.
+          </p>
           <AbsentList absent={absent} onReturn={handleReturnAbsent} />
         </div>
       )}
