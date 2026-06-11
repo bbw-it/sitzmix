@@ -4,7 +4,6 @@ import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 import SearchableSelect from '../common/SearchableSelect';
 import Button from '../common/Button';
-import FloorplanSketch from '../rooms/FloorplanSketch';
 import AbsentList from './AbsentList';
 import { swapOrMove, markAbsent, placeStudent, nextFreeSeatIndex } from '../../lib/seatingPlan';
 
@@ -245,19 +244,11 @@ export default function GeneratorPage() {
     const emptyCircleClass = sizeVariant === 'large' ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs';
     const textClass = sizeVariant === 'large' ? 'text-xs' : 'text-[10px]';
 
-    const sketch = result.room.floorplan_sketch;
     const flipped = sizeVariant === 'large' ? lightboxStudentView : studentView;
     const flipTransform = flipped ? 'scaleX(-1) scaleY(-1)' : 'none';
     return (
       <>
-        {sketch ? (
-          <div
-            className={sizeVariant === 'large' ? 'block max-h-[88vh]' : 'w-full block'}
-            style={{ aspectRatio: `${sketch.width} / ${sketch.height}`, transform: flipTransform }}
-          >
-            <FloorplanSketch sketch={sketch} />
-          </div>
-        ) : planImageUrl ? (
+        {planImageUrl ? (
           <img
             src={planImageUrl}
             alt="Grundriss"

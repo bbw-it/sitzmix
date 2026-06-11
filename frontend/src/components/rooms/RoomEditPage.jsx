@@ -3,9 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/StoreProvider';
 import { ToastContext } from '../../App';
 import SeatPlacer from './SeatPlacer';
-import SketchEditor from './SketchEditor';
 import Button, { buttonClasses } from '../common/Button';
-import { validateSketchFile, toFileFormat } from '../../lib/sketch';
 
 const AREA_COLORS = [
   '#C4B5FD', '#93C5FD', '#86EFAC',
@@ -38,7 +36,7 @@ export default function RoomEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const showToast = useContext(ToastContext);
-  const { getRoom, createRoom, updateRoom, saveAreas, saveSeats, setFloorplan, setSketch, removeFloorplan, getImageUrl } = useStore();
+  const { getRoom, createRoom, updateRoom, saveAreas, saveSeats, setFloorplan, removeFloorplan, getImageUrl } = useStore();
   const isNew = !id;
 
   const [name, setName] = useState('Neues Zimmer');
@@ -52,7 +50,6 @@ export default function RoomEditPage() {
   const [editorMode, setEditorMode] = useState('seats');
   const [activeAreaId, setActiveAreaId] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
-  const [sketchEditorOpen, setSketchEditorOpen] = useState(false);
   const loadedRef = useRef(false);
 
   useEffect(() => {
@@ -159,38 +156,15 @@ export default function RoomEditPage() {
 
   const handleUpload = async (file) => {
     if (!roomId) return;
-    const isJson = file.type === 'application/json' || /\.json$/i.test(file.name);
     setUploading(true);
     try {
-      if (isJson) {
-        const text = await file.text();
-        let parsed;
-        try { parsed = JSON.parse(text); } catch { showToast('Datei ist kein gültiges JSON.', 'error'); setUploading(false); return; }
-        const err = validateSketchFile(parsed);
-        if (err) { showToast(`Ungültige Grundriss-Datei: ${err}`, 'error'); setUploading(false); return; }
-        const data = await setSketch(roomId, parsed);
-        setRoom(data);
-        showToast('Grundriss geladen');
-      } else {
-        const data = await setFloorplan(roomId, file);
-        setRoom(data);
-        showToast('Bild hochgeladen');
-      }
+      const data = await setFloorplan(roomId, file);
+      setRoom(data);
+      showToast('Bild hochgeladen');
     } catch {
       showToast('Fehler beim Laden', 'error');
     }
     setUploading(false);
-  };
-
-  const downloadSketchJson = () => {
-    if (!room?.floorplan_sketch) return;
-    const blob = new Blob([JSON.stringify(toFileFormat(room.floorplan_sketch), null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sitzmix-grundriss-${room.name || 'zimmer'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleRemoveImage = async () => {
@@ -342,24 +316,16 @@ export default function RoomEditPage() {
             <label className="block text-sm font-bold text-gray-900 mb-2">Grundriss</label>
             <div className="flex gap-2 flex-wrap">
               <label className={`${buttonClasses({ variant: 'outline' })} cursor-pointer ${(!roomId || uploading) ? 'opacity-40 cursor-not-allowed' : ''}`}>
-                {uploading ? 'Lade…' : 'Datei auswählen'}
+                {uploading ? 'Lade…' : 'Bild auswählen'}
                 <input
                   type="file"
-                  accept="image/*,application/json,.json"
+                  accept="image/*"
                   className="hidden"
                   onChange={e => e.target.files[0] && handleUpload(e.target.files[0])}
                   disabled={!roomId || uploading}
                 />
               </label>
-              <Button variant="outline" onClick={() => setSketchEditorOpen(true)} disabled={!roomId}>
-                {room?.floorplan_sketch ? 'Skizze bearbeiten' : 'Grundriss skizzieren'}
-              </Button>
-              {room?.floorplan_sketch && (
-                <Button variant="ghost" onClick={downloadSketchJson}>
-                  Als JSON speichern
-                </Button>
-              )}
-              {(room?.floorplan_image_path || room?.floorplan_sketch) && (
+              {room?.floorplan_image_path && (
                 <Button variant="danger" onClick={handleRemoveImage}>
                   Entfernen
                 </Button>
@@ -374,7 +340,7 @@ export default function RoomEditPage() {
         </div>
       </div>
 
-      {roomId && (room?.floorplan_image_path || room?.floorplan_sketch) && (
+      {roomId && room?.floorplan_image_path && (
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -466,7 +432,6 @@ export default function RoomEditPage() {
 
           <SeatPlacer
             imageUrl={imageUrl}
-            sketch={room?.floorplan_sketch || null}
             seats={seats}
             onSeatsChange={handleSeatsChange}
             mode={editorMode}
@@ -480,23 +445,10 @@ export default function RoomEditPage() {
         </div>
       )}
 
-      {roomId && !room?.floorplan_image_path && !room?.floorplan_sketch && (
+      {roomId && !room?.floorplan_image_path && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center">
-          <p className="text-gray-400">Lade ein Grundriss-Bild hoch oder skizziere einen Grundriss, um Sitzplätze zu positionieren.</p>
+          <p className="text-gray-400">Lade ein Grundriss-Bild hoch, um Sitzplätze zu positionieren.</p>
         </div>
-      )}
-
-      {sketchEditorOpen && (
-        <SketchEditor
-          initialSketch={room?.floorplan_sketch || null}
-          onClose={() => setSketchEditorOpen(false)}
-          onSave={async (sketch) => {
-            const data = await setSketch(roomId, sketch);
-            setRoom(data);
-            setSketchEditorOpen(false);
-            showToast('Grundriss gespeichert');
-          }}
-        />
       )}
     </div>
   );

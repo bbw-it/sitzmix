@@ -27,7 +27,7 @@ SitzMix nimmt Ihnen genau diese Arbeit ab:
 ## In 3 Schritten zum Sitzplan
 
 1. **Klasse erfassen** — Klasse anlegen, Lernende eintippen (auch alle auf einmal, durch Komma oder Zeilenumbruch getrennt) und optional Regeln definieren (wer nicht nebeneinander sitzen darf).
-2. **Zimmer einrichten** — Grundriss als Bild hochladen *oder* selbst skizzieren, Tischgruppen festlegen und Sitzplätze platzieren. Das macht man pro Zimmer nur einmal.
+2. **Zimmer einrichten** — Grundriss-Bild hochladen, Tischgruppen festlegen und Sitzplätze platzieren. Das macht man pro Zimmer nur einmal.
 3. **Generieren & anpassen** — Klasse + Zimmer wählen, **Sitzplan generieren** klicken. Nach Belieben neu mischen, Abwesende markieren, einzelne Lernende verschieben und das Ergebnis als PNG sichern.
 
 > Beim ersten Start ist bereits ein **Beispiel** (eine Klasse, ein Zimmer) vorhanden — so können Sie sofort ausprobieren, ohne etwas erfassen zu müssen.
@@ -36,13 +36,13 @@ SitzMix nimmt Ihnen genau diese Arbeit ab:
 
 ## Datenschutz – eingebaut, nicht nachgerüstet
 
-SitzMix verarbeitet **keine** personenbezogenen Daten auf dem Server. Klassenbezeichnungen, Schülernamen, Sitz-Regeln sowie Grundriss-Bilder und Skizzen bleiben **ausschliesslich lokal im Browser** der Lehrperson (gespeichert in der IndexedDB des Geräts). Es findet kein Upload statt — der Server liefert nur das Programm selbst aus und sieht die Daten der Nutzerinnen und Nutzer nie. Die datenschutzrechtliche Vorgabe ist damit baulich erfüllt.
+SitzMix verarbeitet **keine** personenbezogenen Daten auf dem Server. Klassenbezeichnungen, Schülernamen, Sitz-Regeln sowie Grundriss-Bilder bleiben **ausschliesslich lokal im Browser** der Lehrperson (gespeichert in der IndexedDB des Geräts). Es findet kein Upload statt — der Server liefert nur das Programm selbst aus und sieht die Daten der Nutzerinnen und Nutzer nie. Die datenschutzrechtliche Vorgabe ist damit baulich erfüllt.
 
 Damit dabei nichts verloren geht:
 
 - Beim ersten Start fordert die App **Persistent Storage** an, damit der Browser den Speicher nicht automatisch verdrängt.
 - Ein dezenter Banner erinnert daran, regelmässig zu sichern (und erscheint nach jeder Änderung erneut).
-- Über **Einstellungen → Daten exportieren** erstellen Sie jederzeit eine **JSON-Sicherung** (inkl. Grundriss-Bilder und Skizzen). Diese lässt sich nach dem Leeren des Browser-Speichers oder auf einem anderen Gerät wieder importieren.
+- Über **Einstellungen → Daten exportieren** erstellen Sie jederzeit eine **JSON-Sicherung** (inkl. Grundriss-Bilder). Diese lässt sich nach dem Leeren des Browser-Speichers oder auf einem anderen Gerät wieder importieren.
 
 ---
 
@@ -69,20 +69,13 @@ Damit dabei nichts verloren geht:
 
 ### Zimmer & Grundriss
 
-Ein Zimmer hat **entweder** einen hochgeladenen Grundriss **oder** eine selbst gezeichnete Skizze:
-
-- **Datei auswählen** — fertiges Grundriss-Bild (beliebiges Bildformat) hochladen *oder* eine zuvor gespeicherte Skizze (JSON) laden. Alles wird lokal im Browser abgelegt.
-- **Grundriss skizzieren** — ein integrierter Editor zum schnellen Nachzeichnen des Raums:
-  - **Rechtecke** und **Kreise/Ellipsen** einzeichnen und über Rahmen-Griffe einfach grösser/kleiner ziehen, verschieben und **drehen**.
-  - **Raster-Einrasten** für saubere Ausrichtung (mit `Alt` vorübergehend frei, `Shift` hält das Seitenverhältnis).
-  - Brauchen Sie eine freie Form (z.B. L-förmiger Raum)? Ein Rechteck mit **In Polygon umwandeln** in frei editierbare Ecken überführen — Eckpunkte ziehen, an Kanten neue Punkte einfügen, Punkte löschen.
-  - Skizze als **JSON speichern** und später wieder laden (ungültige Dateien werden sauber abgefangen).
+- **Bild auswählen** — ein Grundriss-Bild (beliebiges Bildformat) hochladen. Es wird lokal im Browser abgelegt.
 - **Tischgruppen** (Bereiche) mit Position, Grösse und Farbe definieren.
 - **Sitzplätze** per Drag & Drop auf dem Grundriss platzieren, mit Raster-Einrasten; verschieben, Tischgruppen automatisch zuweisen oder per `Delete`/`Backspace` entfernen.
 
 ### Sichern & auf andere Geräte übertragen
 
-- Gesamten Datenbestand als **JSON exportieren** (Backup inkl. Grundriss-Bildern und Skizzen).
+- Gesamten Datenbestand als **JSON exportieren** (Backup inkl. Grundriss-Bildern).
 - JSON-Backup wieder **importieren** (auch ältere Export-Versionen werden gelesen).
 
 ### Tastenkürzel
@@ -91,7 +84,7 @@ Ein Zimmer hat **entweder** einen hochgeladenen Grundriss **oder** eine selbst g
 |---|---|
 | **L** | Perspektive wechseln (Lehrpersonen- ↔ Lernenden-Sicht) |
 | **F** | Vollbild-Ansicht öffnen/schliessen |
-| **Delete** / **Backspace** | Ausgewählten Sitzplatz bzw. Skizzen-Punkt/-Form löschen |
+| **Delete** / **Backspace** | Ausgewählten Sitzplatz löschen |
 
 ---
 
@@ -148,7 +141,7 @@ Kein Backend, keine Datenbank — die App läuft vollständig im Browser.
 |---|---|
 | Frontend | React 19, Vite 7, TailwindCSS 4, React Router 7 |
 | Datenhaltung | IndexedDB (im Browser) |
-| Grafik | SVG (Skizzen), html-to-image (PNG-Export) |
+| Grafik | html-to-image (PNG-Export) |
 | Tests | Vitest, fake-indexeddb |
 | Deployment | Docker + Nginx (statisch) |
 
@@ -174,7 +167,6 @@ sitzmix/
         │   ├── exportImport.js     # JSON Export/Import (v1 + v2)
         │   ├── seatingAlgorithm.js # Sitzplan-Algorithmus (Backtracking)
         │   ├── seatingPlan.js      # Reine Helfer fürs Umordnen/Abwesend
-        │   ├── sketch.js           # Skizzen-Geometrie + Datei-Validierung
         │   └── seedData.js         # Beispieldaten beim ersten Start
         ├── store/
         │   └── StoreProvider.jsx   # React-Context + useStore()-Hook
@@ -182,8 +174,7 @@ sitzmix/
             ├── layout/             # Navbar + Datenschutz-Banner
             ├── generator/          # GeneratorPage, AbsentList
             ├── classes/            # Klassen-Liste & -Editor
-            ├── rooms/              # Zimmer-Editor, SeatPlacer,
-            │                       #   FloorplanSketch, SketchEditor
+            ├── rooms/              # Zimmer-Editor, SeatPlacer
             ├── settings/           # Import/Export-Modals
             └── common/             # Toast, SearchableSelect, Button
 ```
@@ -203,7 +194,6 @@ Ein Snapshot-Objekt in IndexedDB (Object-Store `app`, Key `snapshot`); Grundriss
   rooms: [
     { id, name, image_width, image_height,
       floorplan_image_path,   // = imageId des Blobs, oder null
-      floorplan_sketch,       // { version, width, height, shapes } oder null (exklusiv zum Bild)
       areas: [{ id, name, color, sort_order, x_pos, y_pos, width_pct, height_pct }],
       seats: [{ id, seat_number, x_position, y_position, area_id }] }
   ]
@@ -211,13 +201,11 @@ Ein Snapshot-Objekt in IndexedDB (Object-Store `app`, Key `snapshot`); Grundriss
 ```
 
 - IDs sind UUIDs (`crypto.randomUUID()`). Nach jeder Änderung wird der vollständige Snapshot persistiert.
-- `floorplan_image_path` und `floorplan_sketch` schliessen sich gegenseitig aus (entweder Bild oder Skizze).
-- Eine Skizze ist rein visuell und beeinflusst den Algorithmus nicht.
+- Grundriss-Bilder liegen als separate Blobs im Object-Store `images`; `floorplan_image_path` verweist darauf.
 
-### Datei-Formate
+### Datei-Format
 
-- **App-Backup:** `{ type: "sitzmix-export", version: 2, classes, rooms }` (Bilder als Base64, Skizzen inline).
-- **Einzelne Skizze:** `{ type: "sitzmix-floorplan", version: 2, width, height, shapes }`. Formen sind `rect`, `ellipse` oder `polygon` (ältere v1-Dateien mit `circle`/`polygon` werden weiterhin gelesen).
+- **App-Backup:** `{ type: "sitzmix-export", version: 2, classes, rooms }` (Grundriss-Bilder als Base64). Ältere Exporte mit eingebetteten Skizzen werden weiterhin importiert (die Skizze wird dabei ignoriert).
 
 ## Sitzplan-Algorithmus
 

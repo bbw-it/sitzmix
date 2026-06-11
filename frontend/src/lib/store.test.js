@@ -70,15 +70,6 @@ describe('room store', () => {
     expect(store.listRooms()[0].seatCount).toBe(1);
   });
 
-  it('setSketch stores sketch and clears image reference', async () => {
-    const r = await store.createRoom({ name: 'Zi' });
-    const sketch = { version: 1, width: 1000, height: 700, shapes: [{ id: 'p1', type: 'polygon', points: [{x:0,y:0},{x:10,y:0},{x:10,y:10}] }] };
-    const room = await store.setSketch(r.id, sketch);
-    expect(room.floorplan_sketch.shapes).toHaveLength(1);
-    expect(room.floorplan_image_path).toBeNull();
-    expect(room.image_width).toBe(1000);
-    expect(store.listRooms()[0].floorplan_sketch).toBeTruthy();
-  });
 
   it('generates a plan from stored data', async () => {
     const c = await store.createClass({ name: '3a' });

@@ -41,7 +41,6 @@ export async function buildExport({ classIds = [], roomIds = [] }) {
     }
     rooms.push({
       name: r.name, image_width: r.image_width, image_height: r.image_height, image,
-      floorplan_sketch: r.floorplan_sketch || null,
       areas: [...r.areas].sort((a, b) => a.sort_order - b.sort_order).map(a => ({
         name: a.name, color: a.color, sort_order: a.sort_order, x_pos: a.x_pos, y_pos: a.y_pos, width_pct: a.width_pct, height_pct: a.height_pct,
       })),
@@ -102,9 +101,7 @@ export async function applyImport(data) {
       area_id: s.area_name ? (areaByName.get(s.area_name) || null) : null,
     })));
     summary.seats += (room.seats || []).length;
-    if (room.floorplan_sketch) {
-      await store.setSketch(created.id, room.floorplan_sketch);
-    } else if (room.image) {
+    if (room.image) {
       await store.setFloorplan(created.id, dataUrlToBlob(room.image));
     }
     summary.rooms++;

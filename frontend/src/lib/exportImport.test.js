@@ -23,15 +23,17 @@ describe('export/import', () => {
     expect(store.getClass(store.listClasses()[0].id).students).toHaveLength(2);
   });
 
-  it('round-trips a room with a sketch', async () => {
+  it('round-trips a room with areas and seats', async () => {
     const r = await store.createRoom({ name: 'Zi' });
-    await store.setSketch(r.id, { version: 1, width: 800, height: 600, shapes: [{ id: 'c1', type: 'circle', cx: 100, cy: 100, r: 50 }] });
+    const areas = await store.saveAreas(r.id, [{ name: 'T1', color: '#000', x_pos: 0, y_pos: 0, width_pct: 20, height_pct: 20 }]);
+    await store.saveSeats(r.id, [{ seat_number: 1, x_position: 5, y_position: 5, area_id: areas[0].id }]);
     const data = await buildExport({ classIds: [], roomIds: [r.id] });
-    expect(data.rooms[0].floorplan_sketch.shapes).toHaveLength(1);
+    expect(data.rooms[0].seats).toHaveLength(1);
     store._setState({ schemaVersion: 2, classes: [], rooms: [] });
     await applyImport(data);
-    const imported = store.listRooms()[0];
-    expect(imported.floorplan_sketch.width).toBe(800);
+    const imported = store.getRoom(store.listRooms()[0].id);
+    expect(imported.seats).toHaveLength(1);
+    expect(imported.areas).toHaveLength(1);
   });
 
   it('accepts v1 and rejects v3', () => {

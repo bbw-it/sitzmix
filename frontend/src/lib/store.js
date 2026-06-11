@@ -146,7 +146,6 @@ export function listRooms() {
     hasAreas: r.areas.length > 0,
     areaCount: r.areas.length,
     floorplan_image_path: r.floorplan_image_path,
-    floorplan_sketch: r.floorplan_sketch || null,
     image_width: r.image_width, image_height: r.image_height,
   }));
 }
@@ -157,7 +156,6 @@ export function getRoom(id) {
   return {
     id: r.id, name: r.name,
     floorplan_image_path: r.floorplan_image_path,
-    floorplan_sketch: r.floorplan_sketch || null,
     image_width: r.image_width, image_height: r.image_height,
     seats: r.seats.map(s => ({ ...s })),
     areas: [...r.areas].sort((a, b) => a.sort_order - b.sort_order).map(a => ({ ...a })),
@@ -165,7 +163,7 @@ export function getRoom(id) {
 }
 
 export async function createRoom({ name }) {
-  const r = { id: uid(), name: name || 'Neues Zimmer', floorplan_image_path: null, floorplan_sketch: null, image_width: 0, image_height: 0, seats: [], areas: [] };
+  const r = { id: uid(), name: name || 'Neues Zimmer', floorplan_image_path: null, image_width: 0, image_height: 0, seats: [], areas: [] };
   state.rooms.push(r);
   await persist();
   return { id: r.id, name: r.name };
@@ -220,20 +218,7 @@ export async function setFloorplan(roomId, blob) {
   let dim = { width: 0, height: 0 };
   try { dim = await imageDimensions(blob); } catch { /* jsdom/headless: keine Dimensionen */ }
   r.floorplan_image_path = imageId;
-  r.floorplan_sketch = null;
   r.image_width = dim.width; r.image_height = dim.height;
-  await persist();
-  return getRoom(roomId);
-}
-
-export async function setSketch(roomId, sketch) {
-  const r = state.rooms.find(x => x.id === roomId);
-  if (!r) return null;
-  if (r.floorplan_image_path) { await deleteImage(r.floorplan_image_path); urlCache.delete(r.floorplan_image_path); }
-  r.floorplan_image_path = null;
-  r.floorplan_sketch = { version: sketch.version || 1, width: sketch.width, height: sketch.height, shapes: sketch.shapes };
-  r.image_width = sketch.width;
-  r.image_height = sketch.height;
   await persist();
   return getRoom(roomId);
 }
@@ -242,7 +227,7 @@ export async function removeFloorplan(roomId) {
   const r = state.rooms.find(x => x.id === roomId);
   if (!r) return null;
   if (r.floorplan_image_path) { await deleteImage(r.floorplan_image_path); urlCache.delete(r.floorplan_image_path); }
-  r.floorplan_image_path = null; r.floorplan_sketch = null; r.image_width = 0; r.image_height = 0;
+  r.floorplan_image_path = null; r.image_width = 0; r.image_height = 0;
   r.seats = []; r.areas = [];
   await persist();
   return getRoom(roomId);
@@ -279,7 +264,7 @@ export function generate({ classId, roomId, fillMode, personsPerArea, absentIds 
   );
   return {
     ...result,
-    room: { id: r.id, name: r.name, floorplan_image_path: r.floorplan_image_path, floorplan_sketch: r.floorplan_sketch || null, image_width: r.image_width, image_height: r.image_height },
+    room: { id: r.id, name: r.name, floorplan_image_path: r.floorplan_image_path, image_width: r.image_width, image_height: r.image_height },
     areas: [...r.areas].sort((a, b) => a.sort_order - b.sort_order),
   };
 }
