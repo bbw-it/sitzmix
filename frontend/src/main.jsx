@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import StoreProvider from './store/StoreProvider';
+import { applyTheme, getTheme } from './lib/theme';
 import './index.css';
+
+applyTheme(getTheme());
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

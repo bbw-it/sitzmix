@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import ExportModal from '../settings/ExportModal';
 import ImportModal from '../settings/ImportModal';
+import ThemeModal from '../settings/ThemeModal';
 import PrivacyBanner from './PrivacyBanner';
 
 export default function Navbar() {
@@ -9,6 +10,7 @@ export default function Navbar() {
   const [gearOpen, setGearOpen] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showTheme, setShowTheme] = useState(false);
   const gearRef = useRef(null);
 
   const linkClass = ({ isActive }) =>
@@ -32,6 +34,7 @@ export default function Navbar() {
 
   const openExport = () => { setGearOpen(false); setMenuOpen(false); setShowExport(true); };
   const openImport = () => { setGearOpen(false); setMenuOpen(false); setShowImport(true); };
+  const openTheme = () => { setGearOpen(false); setMenuOpen(false); setShowTheme(true); };
 
   return (
     <>
@@ -66,6 +69,16 @@ export default function Navbar() {
 
                 {gearOpen && (
                   <div className="absolute right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+                    <button
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      onClick={openTheme}
+                    >
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      </svg>
+                      Erscheinungsbild
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
                     <button
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
                       onClick={openExport}
@@ -113,6 +126,12 @@ export default function Navbar() {
               <div className="border-t border-gray-100 my-2" />
               <button
                 className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 text-left"
+                onClick={openTheme}
+              >
+                Erscheinungsbild
+              </button>
+              <button
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 text-left"
                 onClick={openExport}
               >
                 Daten exportieren
@@ -130,6 +149,7 @@ export default function Navbar() {
 
       <PrivacyBanner />
 
+      {showTheme && <ThemeModal onClose={() => setShowTheme(false)} />}
       {showExport && <ExportModal onClose={() => setShowExport(false)} />}
       {showImport && <ImportModal onClose={() => setShowImport(false)} />}
     </>

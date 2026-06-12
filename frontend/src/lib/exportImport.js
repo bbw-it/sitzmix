@@ -1,6 +1,7 @@
 import { getState, saveSnapshotNow } from './store';
 import { getImage } from './db';
 import * as store from './store';
+import { getTheme, setTheme, isValidTheme } from './theme';
 
 function blobToDataUrl(blob) {
   return new Promise((res, rej) => {
@@ -50,7 +51,7 @@ export async function buildExport({ classIds = [], roomIds = [] }) {
       })),
     });
   }
-  return { type: 'sitzmix-export', version: 2, exportedAt: new Date().toISOString(), classes, rooms };
+  return { type: 'sitzmix-export', version: 2, exportedAt: new Date().toISOString(), theme: getTheme(), classes, rooms };
 }
 
 export function validateImport(data) {
@@ -106,6 +107,8 @@ export async function applyImport(data) {
     }
     summary.rooms++;
   }
+
+  if (data.theme && isValidTheme(data.theme)) setTheme(data.theme);
 
   await saveSnapshotNow();
   return summary;

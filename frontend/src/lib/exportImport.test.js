@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as store from './store';
 import { buildExport, validateImport, applyImport } from './exportImport';
+import { setTheme, getTheme, _resetTheme } from './theme';
 
 beforeEach(async () => {
   await new Promise((res) => { const r = indexedDB.deleteDatabase('sitzmix'); r.onsuccess = r.onerror = () => res(); });
   store._setState({ schemaVersion: 2, classes: [], rooms: [] });
+  try { localStorage.removeItem('sitzmix-theme'); } catch { /* ignore */ }
+  _resetTheme();
 });
 
 describe('export/import', () => {
@@ -34,6 +37,15 @@ describe('export/import', () => {
     const imported = store.getRoom(store.listRooms()[0].id);
     expect(imported.seats).toHaveLength(1);
     expect(imported.areas).toHaveLength(1);
+  });
+
+  it('includes the chosen theme and restores it on import', async () => {
+    setTheme('bern');
+    const data = await buildExport({ classIds: [], roomIds: [] });
+    expect(data.theme).toBe('bern');
+    setTheme('winterthur');
+    await applyImport(data);
+    expect(getTheme()).toBe('bern');
   });
 
   it('accepts v1 and rejects v3', () => {

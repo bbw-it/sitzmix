@@ -73,6 +73,11 @@ Damit dabei nichts verloren geht:
 - **Tischgruppen** (Bereiche) mit Position, Grösse und Farbe definieren.
 - **Sitzplätze** per Drag & Drop auf dem Grundriss platzieren, mit Raster-Einrasten; verschieben, Tischgruppen automatisch zuweisen oder per `Delete`/`Backspace` entfernen.
 
+### Erscheinungsbild
+
+- Über **Zahnrad → Erscheinungsbild** ein **Theme** wählen — Farb- und Schrift-Kombinationen, benannt nach Schweizer Städten: **Winterthur** (Standard, Grün), **Zürich** (Blau), **Bern** (Rot), **Genève** (Petrol), **Lugano** (Terracotta).
+- Die Auswahl wird lokal im Browser gespeichert und ist im Daten-Export/-Import enthalten.
+
 ### Sichern & auf andere Geräte übertragen
 
 - Gesamten Datenbestand als **JSON exportieren** (Backup inkl. Grundriss-Bildern).
