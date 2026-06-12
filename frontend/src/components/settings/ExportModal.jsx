@@ -52,6 +52,18 @@ export default function ExportModal({ onClose }) {
   };
 
   const hasSelection = selectedClassIds.size > 0 || selectedRoomIds.size > 0;
+  const totalItems = classes.length + rooms.length;
+  const allSelected = totalItems > 0 && selectedClassIds.size === classes.length && selectedRoomIds.size === rooms.length;
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedClassIds(new Set());
+      setSelectedRoomIds(new Set());
+    } else {
+      setSelectedClassIds(new Set(classes.map(c => c.id)));
+      setSelectedRoomIds(new Set(rooms.map(r => r.id)));
+    }
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -91,6 +103,20 @@ export default function ExportModal({ onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {/* Alles auswählen */}
+          {totalItems > 0 && (
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer pb-3 border-b border-gray-100">
+              <input
+                type="checkbox"
+                className="accent-lime-600"
+                checked={allSelected}
+                onChange={toggleAll}
+              />
+              <span className="font-semibold">Alles auswählen</span>
+              <span className="text-gray-400 text-xs font-normal">(alle Klassen &amp; Zimmer)</span>
+            </label>
+          )}
+
           {/* Klassen */}
           <div>
             <button
