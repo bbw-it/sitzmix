@@ -1,7 +1,7 @@
 import { getState, saveSnapshotNow } from './store';
 import { getImage } from './db';
 import * as store from './store';
-import { getTheme, setTheme, isValidTheme } from './theme';
+import { getTheme, setTheme, isValidTheme, getCustomConfig, setCustomConfig } from './theme';
 
 function blobToDataUrl(blob) {
   return new Promise((res, rej) => {
@@ -51,7 +51,7 @@ export async function buildExport({ classIds = [], roomIds = [] }) {
       })),
     });
   }
-  return { type: 'sitzmix-export', version: 2, exportedAt: new Date().toISOString(), theme: getTheme(), classes, rooms };
+  return { type: 'sitzmix-export', version: 2, exportedAt: new Date().toISOString(), theme: getTheme(), themeCustom: getCustomConfig(), classes, rooms };
 }
 
 export function validateImport(data) {
@@ -108,6 +108,7 @@ export async function applyImport(data) {
     summary.rooms++;
   }
 
+  if (data.themeCustom) setCustomConfig(data.themeCustom);   // setCustomConfig validiert selbst
   if (data.theme && isValidTheme(data.theme)) setTheme(data.theme);
 
   await saveSnapshotNow();

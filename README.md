@@ -75,7 +75,7 @@ Damit dabei nichts verloren geht:
 
 ### Erscheinungsbild
 
-- Über **Zahnrad → Erscheinungsbild** ein **Theme** wählen — Farb- und Schrift-Kombinationen, benannt nach Schweizer Städten: **Winterthur** (Standard, Grün), **Zürich** (Blau), **Bern** (Rot), **Genève** (Petrol), **Lugano** (Terracotta).
+- Über **Zahnrad → Erscheinungsbild** ein **Theme** wählen — Farb- und Schrift-Kombinationen, benannt nach Schweizer Städten: **Winterthur** (Standard, Grün), **Zürich** (Blau), **Bern** (Rot), **Genève** (Petrol), **Lugano** (Terracotta) — oder **Eigenes** mit frei wählbarer Akzentfarbe und Schrift.
 - Die Auswahl wird lokal im Browser gespeichert und ist im Daten-Export/-Import enthalten.
 
 ### Sichern & auf andere Geräte übertragen

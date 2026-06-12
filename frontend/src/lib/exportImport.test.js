@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as store from './store';
 import { buildExport, validateImport, applyImport } from './exportImport';
-import { setTheme, getTheme, _resetTheme } from './theme';
+import { setTheme, getTheme, setCustomConfig, getCustomConfig, _resetTheme } from './theme';
 
 beforeEach(async () => {
   await new Promise((res) => { const r = indexedDB.deleteDatabase('sitzmix'); r.onsuccess = r.onerror = () => res(); });
@@ -46,6 +46,17 @@ describe('export/import', () => {
     setTheme('winterthur');
     await applyImport(data);
     expect(getTheme()).toBe('bern');
+  });
+
+  it('round-trips the custom theme config', async () => {
+    setCustomConfig({ color: '#336699', font: 'mono' });
+    setTheme('custom');
+    const data = await buildExport({ classIds: [], roomIds: [] });
+    expect(data.themeCustom).toEqual({ color: '#336699', font: 'mono' });
+    _resetTheme(); setTheme('winterthur');
+    await applyImport(data);
+    expect(getTheme()).toBe('custom');
+    expect(getCustomConfig()).toEqual({ color: '#336699', font: 'mono' });
   });
 
   it('accepts v1 and rejects v3', () => {
