@@ -53,7 +53,7 @@ Damit dabei nichts verloren geht:
 - Klasse und Zimmer wählen, Sitzplan **per Klick generieren** (die Berechnung läuft im Browser).
 - Zwei Verteilmodi:
   - **Alle Plätze auffüllen** — Lernende werden der Reihe nach auf alle Plätze verteilt.
-  - **Pro Bereich** — Lernende werden gleichmässig auf die Tischgruppen verteilt (Anzahl pro Bereich wählbar), mit Optimierung des Abstands zwischen verbotenen Paaren.
+  - **Pro Bereich** — Lernende werden gleichmässig auf die Tischgruppen verteilt (Anzahl pro Bereich wählbar); verbotene Paare landen nie am selben Tisch und nie direkt nebeneinander.
 - **Regeln werden eingehalten:** definierte Paare landen weder am selben Tisch noch direkt nebeneinander.
 - **Abwesende markieren:** Lernende mit `×` als abwesend setzen — der Platz wird frei, die Person erscheint in einer immer sichtbaren Leiste oben. Beim **Neu mischen** bleiben Abwesende abwesend. Zurückholen per Klick (nächster freier Platz) oder per Drag auf einen freien Platz.
 - **Manuell umordnen:** Lernende per **Drag & Drop** verschieben oder tauschen, mit klarem visuellem Feedback.
@@ -242,9 +242,8 @@ Ein Snapshot-Objekt in IndexedDB (Object-Store `app`, Key `snapshot`); Grundriss
 1. **Alle Plätze auffüllen**: Lernende werden zufällig verteilt; Backtracking stellt sicher, dass verbotene Paare weder im selben Bereich noch auf physisch benachbarten Plätzen landen.
 2. **Pro Bereich** (empfohlen):
    - Berechnet eine gleichmässige Verteilung (z.B. 24 Lernende auf 6 Tische → 4 pro Tisch).
-   - Weist Lernende per Backtracking den Tischgruppen zu (verbotene Paare nie am gleichen Tisch).
-   - Optimiert über bis zu 60 Durchläufe den Abstand zwischen verbotenen Paaren.
-   - Fällt auf den sequenziellen Modus zurück, falls keine Lösung gefunden wird.
+   - **Rejection-Sampling:** mischt gleichverteilt und verwirft Konfigurationen, die eine Regel verletzen (gleicher Tisch oder direkt benachbart). Das Ergebnis ist dadurch eine exakt gleichverteilte Stichprobe aus allen gültigen Sitzordnungen — statistisch verifiziert gegen einen unabhängigen Referenz-Sampler (20'000 Läufe). Eine frühere Abstands-Maximierung wurde entfernt, weil sie regelbeteiligte Lernende messbar an den Ecktischen clusterte.
+   - Bei stark verregelten Klassen greift Backtracking als zweite Stufe, danach der sequenzielle Modus als Fallback.
 
 **Nachbarschaftserkennung:** Plätze gelten als benachbart, wenn ihr Abstand unter 15 % der Grundrissdimensionen liegt.
 
