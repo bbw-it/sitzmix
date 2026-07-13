@@ -1,4 +1,4 @@
-import React, { useState, createContext } from 'react';
+import React, { useState, useRef, useEffect, useCallback, createContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import GeneratorPage from './components/generator/GeneratorPage';
@@ -12,11 +12,19 @@ export const ToastContext = createContext(null);
 
 export default function App() {
   const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
 
-  const showToast = (message, type = 'success') => {
+  // Der Timer wird pro Toast zurückgesetzt. Ohne das würde eine zweite Meldung
+  // den Timer der ersten erben und schon nach deren Restzeit verschwinden.
+  // `useCallback`, damit der Context-Wert stabil bleibt und Konsumenten nicht
+  // bei jedem App-Render neu rendern.
+  const showToast = useCallback((message, type = 'success') => {
+    clearTimeout(toastTimer.current);
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   return (
     <ToastContext.Provider value={showToast}>

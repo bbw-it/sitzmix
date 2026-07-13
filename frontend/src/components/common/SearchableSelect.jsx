@@ -14,7 +14,8 @@ export default function SearchableSelect({ value, onChange, options, placeholder
     ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()))
     : options;
 
-  // Close on outside click
+  // Close on outside click. `pointerdown` deckt Maus und Touch gleichermassen ab
+  // (wie in Navbar und SeatPlacer); `mousedown` feuert auf Touch-Geräten nicht zuverlässig.
   useEffect(() => {
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -22,8 +23,8 @@ export default function SearchableSelect({ value, onChange, options, placeholder
         setSearch('');
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
   }, []);
 
   const handleSelect = (optionValue) => {

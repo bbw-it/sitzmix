@@ -24,26 +24,31 @@ export async function seedIfEmpty() {
   const state = store.getState();
   if (state.classes.length > 0 || state.rooms.length > 0) return false;
 
-  const cls = await store.createClass({ name: 'Beispielklasse 3a' });
-  const ids = [];
-  for (const [name] of STUDENTS) { const s = await store.addStudent(cls.id, { name }); ids.push(s.id); }
-  // Farben exakt setzen
-  const liveClass = store.getState().classes.find(c => c.id === cls.id);
-  liveClass.students.forEach((s, i) => { s.color = STUDENTS[i][1]; });
-  // Regeln: Lea↔Tim (0↔1), Elena↔Jan (4↔5)
-  await store.addRule(cls.id, { studentAId: ids[0], studentBId: ids[1] });
-  await store.addRule(cls.id, { studentAId: ids[4], studentBId: ids[5] });
+  // runBatch: der komplette Seed wird mit einem einzigen Snapshot-Schreibvorgang
+  // persistiert statt mit einem pro Lernendem/Zimmer.
+  await store.runBatch(async () => {
+    const cls = await store.createClass({ name: 'Beispielklasse 3a' });
+    const ids = [];
+    for (const [name] of STUDENTS) { const s = await store.addStudent(cls.id, { name }); ids.push(s.id); }
+    // Farben exakt setzen
+    const liveClass = store.getState().classes.find(c => c.id === cls.id);
+    liveClass.students.forEach((s, i) => { s.color = STUDENTS[i][1]; });
+    // Regeln: Lea↔Tim (0↔1), Elena↔Jan (4↔5)
+    await store.addRule(cls.id, { studentAId: ids[0], studentBId: ids[1] });
+    await store.addRule(cls.id, { studentAId: ids[4], studentBId: ids[5] });
 
-  const room = await store.createRoom({ name: 'Zimmer 201' });
-  const savedAreas = await store.saveAreas(room.id, AREAS.map(([name, color, x, y, w, h]) => ({ name, color, x_pos: x, y_pos: y, width_pct: w, height_pct: h })));
-  await store.saveSeats(room.id, SEATS.map(([x, y, ai], i) => ({ seat_number: i + 1, x_position: x, y_position: y, area_id: savedAreas[ai].id })));
+    const room = await store.createRoom({ name: 'Zimmer 201' });
+    const savedAreas = await store.saveAreas(room.id, AREAS.map(([name, color, x, y, w, h]) => ({ name, color, x_pos: x, y_pos: y, width_pct: w, height_pct: h })));
+    await store.saveSeats(room.id, SEATS.map(([x, y, ai], i) => ({ seat_number: i + 1, x_position: x, y_position: y, area_id: savedAreas[ai].id })));
 
-  // Default-Grundriss laden und als Blob ablegen
-  try {
-    const resp = await fetch('/default-floorplan.png');
-    if (resp.ok) await store.setFloorplan(room.id, await resp.blob());
-  } catch { /* ohne Bild weiter */ }
+    // Default-Grundriss laden und als Blob ablegen
+    try {
+      const resp = await fetch('/default-floorplan.webp');
+      if (resp.ok) await store.setFloorplan(room.id, await resp.blob());
+    } catch { /* ohne Bild weiter */ }
 
-  await store.saveSnapshotNow();
+    await store.saveSnapshotNow();
+  });
+
   return true;
 }

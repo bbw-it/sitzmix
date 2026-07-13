@@ -6,6 +6,7 @@ import SearchableSelect from '../common/SearchableSelect';
 import Button from '../common/Button';
 import AbsentList from './AbsentList';
 import { swapOrMove, markAbsent, placeStudent, nextFreeSeatIndex } from '../../lib/seatingPlan';
+import { computeExportPixelRatio } from '../../lib/pngExport';
 
 export default function GeneratorPage() {
   const showToast = useContext(ToastContext);
@@ -222,13 +223,41 @@ export default function GeneratorPage() {
   };
 
   const downloadPng = async () => {
-    if (!planRef.current) return;
+    const node = planRef.current;
+    if (!node) return;
     try {
-      const dataUrl = await toPng(planRef.current, {
-        pixelRatio: 2,
-        backgroundColor: '#ffffff',
-        filter: (node) => !(node.classList && node.classList.contains('export-hide')),
+      // Der Plan-Container hat keine eigene Höhe: sie entsteht erst durch das
+      // Grundriss-Bild (die Sitze sind absolut positioniert). Wird exportiert,
+      // bevor das Bild dekodiert ist, rendert html-to-image auf ein 0×0-Canvas
+      // und liefert eine leere PNG-Datei — bei grüner Erfolgsmeldung.
+      await Promise.all(
+        [...node.querySelectorAll('img')].map(img =>
+          img.complete ? Promise.resolve() : img.decode().catch(() => {})
+        )
+      );
+      if (!node.offsetWidth || !node.offsetHeight) {
+        showToast('Grundriss noch nicht geladen — bitte kurz warten', 'warning');
+        return;
+      }
+
+      // Pixeldichte an Gerät und Plangrösse anpassen (scharf, aber gedeckelt),
+      // statt fix 2 — sonst frieren schwache Geräte beim Rastern ein.
+      const pixelRatio = computeExportPixelRatio({
+        width: node.offsetWidth,
+        height: node.offsetHeight,
+        deviceMemory: navigator.deviceMemory,
       });
+      const dataUrl = await toPng(node, {
+        pixelRatio,
+        backgroundColor: '#ffffff',
+        filter: (n) => !(n.classList && n.classList.contains('export-hide')),
+      });
+      // Letzte Sicherung: ein leeres Canvas liefert exakt "data:,".
+      if (!dataUrl || dataUrl.length < 32) {
+        showToast('Fehler beim Export', 'error');
+        return;
+      }
+
       const link = document.createElement('a');
       link.download = `sitzmix-${className || 'plan'}-${roomName || 'zimmer'}.png`;
       link.href = dataUrl;

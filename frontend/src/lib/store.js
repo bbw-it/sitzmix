@@ -35,9 +35,31 @@ function markExportPending() {
   notify();
 }
 
+// ── Stapel-Schreiben ───────────────────────────────────────
+// Jede Mutation schreibt sonst den vollständigen Snapshot. Beim Seed (24 Lernende)
+// oder beim Import einer Klasse sind das dutzende Schreibvorgänge für einen einzigen
+// Endzustand. runBatch() bündelt sie zu genau einem Schreibvorgang am Schluss.
+let batchDepth = 0;
+let batchDirty = false;
+
+export async function runBatch(fn) {
+  batchDepth++;
+  try {
+    return await fn();
+  } finally {
+    batchDepth--;
+    // Auch im Fehlerfall schreiben, damit DB und In-Memory-Zustand nicht auseinanderlaufen.
+    if (batchDepth === 0 && batchDirty) {
+      batchDirty = false;
+      await saveSnapshot(state);
+    }
+  }
+}
+
 async function persist() {
-  await saveSnapshot(state);
   markExportPending();
+  if (batchDepth > 0) { batchDirty = true; return; }
+  await saveSnapshot(state);
 }
 
 export async function loadFromDb() {
@@ -177,7 +199,10 @@ export async function updateRoom(id, { name }) {
 
 export async function deleteRoom(id) {
   const r = state.rooms.find(x => x.id === id);
-  if (r?.floorplan_image_path) await deleteImage(r.floorplan_image_path);
+  if (r?.floorplan_image_path) {
+    await deleteImage(r.floorplan_image_path);
+    releaseImageUrl(r.floorplan_image_path);
+  }
   state.rooms = state.rooms.filter(x => x.id !== id);
   await persist();
 }
@@ -212,7 +237,7 @@ async function imageDimensions(blob) {
 export async function setFloorplan(roomId, blob) {
   const r = state.rooms.find(x => x.id === roomId);
   if (!r) return null;
-  if (r.floorplan_image_path) { await deleteImage(r.floorplan_image_path); urlCache.delete(r.floorplan_image_path); }
+  if (r.floorplan_image_path) { await deleteImage(r.floorplan_image_path); releaseImageUrl(r.floorplan_image_path); }
   const imageId = uid();
   await putImage(imageId, blob);
   let dim = { width: 0, height: 0 };
@@ -226,14 +251,23 @@ export async function setFloorplan(roomId, blob) {
 export async function removeFloorplan(roomId) {
   const r = state.rooms.find(x => x.id === roomId);
   if (!r) return null;
-  if (r.floorplan_image_path) { await deleteImage(r.floorplan_image_path); urlCache.delete(r.floorplan_image_path); }
+  if (r.floorplan_image_path) { await deleteImage(r.floorplan_image_path); releaseImageUrl(r.floorplan_image_path); }
   r.floorplan_image_path = null; r.image_width = 0; r.image_height = 0;
   r.seats = []; r.areas = [];
   await persist();
   return getRoom(roomId);
 }
 
+// Object-URLs pro Bild einmal erzeugen und wiederverwenden. Wird ein Bild ersetzt
+// oder gelöscht, muss die URL freigegeben werden — sonst hält der Browser den
+// Blob (mehrere MB) bis zum Reload im Speicher.
 const urlCache = new Map();
+
+function releaseImageUrl(imageId) {
+  const url = urlCache.get(imageId);
+  if (url) { URL.revokeObjectURL(url); urlCache.delete(imageId); }
+}
+
 export async function getImageUrl(imageId) {
   if (!imageId) return null;
   if (urlCache.has(imageId)) return urlCache.get(imageId);

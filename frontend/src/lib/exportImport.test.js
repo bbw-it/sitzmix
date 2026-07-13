@@ -80,3 +80,44 @@ describe('export/import', () => {
     expect(imported.students.find(s => s.name === 'Zoe').color).toBe('#123456');
   });
 });
+
+describe('import hardening', () => {
+  const withImage = (image) => ({
+    type: 'sitzmix-export', version: 2,
+    classes: [{ name: 'Klasse', students: [{ name: 'Anna', color: '#aabbcc' }], rules: [] }],
+    rooms: [{ name: 'Zi', areas: [], seats: [], image }],
+  });
+
+  it('rejects a malformed image data URL with a readable error', async () => {
+    // Vorher: `meta.match(...)[1]` warf einen TypeError.
+    await expect(applyImport(withImage('data:image/png,notbase64'))).rejects.toThrow(/beschädigt/);
+  });
+
+  it('rejects a non-image MIME type in the backup', async () => {
+    await expect(applyImport(withImage('data:text/html;base64,PHNjcmlwdD4='))).rejects.toThrow(/Unerlaubter Bildtyp/);
+  });
+
+  it('leaves no partial data behind when an image is corrupt', async () => {
+    // Bilder werden vor der ersten Mutation dekodiert → nichts wird angelegt.
+    await expect(applyImport(withImage('data:image/png;base64,@@@'))).rejects.toThrow();
+    expect(store.listClasses()).toHaveLength(0);
+    expect(store.listRooms()).toHaveLength(0);
+  });
+
+  it('falls back to a default color when the file carries an invalid one', async () => {
+    await applyImport({
+      type: 'sitzmix-export', version: 2, rooms: [],
+      classes: [{ name: 'K', students: [{ name: 'Anna', color: 'url(javascript:alert(1))' }], rules: [] }],
+    });
+    const cls = store.getClass(store.listClasses()[0].id);
+    expect(cls.students[0].color).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+
+  it('normalizes a valid color without a leading #', async () => {
+    await applyImport({
+      type: 'sitzmix-export', version: 2, rooms: [],
+      classes: [{ name: 'K', students: [{ name: 'Anna', color: 'AABBCC' }], rules: [] }],
+    });
+    expect(store.getClass(store.listClasses()[0].id).students[0].color).toBe('#aabbcc');
+  });
+});

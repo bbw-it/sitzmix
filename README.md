@@ -128,6 +128,29 @@ SITZMIX_PORT=8090 ./setup.sh
 
 Einen Reverse-Proxy (nginx/Caddy/Traefik) auf den SitzMix-Port richten und dort TLS terminieren. Der Container liefert intern nur HTTP auf Port 80 bzw. den gemappten Host-Port.
 
+Am Proxy zusätzlich HSTS setzen (gehört zur TLS-Terminierung, nicht in den Container):
+
+```nginx
+add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+```
+
+## Sicherheit & Härtung
+
+SitzMix hat keine Serverlogik, keine Datenbank und keine Benutzerkonten — der Server liefert nur statische Dateien aus. Die Angriffsfläche beschränkt sich damit auf den Browser. `nginx.conf` härtet die Auslieferung zusätzlich:
+
+| Header | Zweck |
+|---|---|
+| `Content-Security-Policy` | `connect-src 'self' blob:` — die App **kann** keine Daten an Dritte senden; `script-src 'self'` verbietet Inline-Skripte |
+| `X-Frame-Options` / `frame-ancestors 'none'` | kein Einbetten in fremde Seiten (Clickjacking) |
+| `X-Content-Type-Options: nosniff` | kein MIME-Sniffing |
+| `Referrer-Policy: no-referrer` | keine URL-Weitergabe an Dritte |
+| `Cross-Origin-Opener/Resource-Policy` | Isolation gegenüber anderen Herkünften |
+| `Permissions-Policy` | Geolocation/Kamera/Mikrofon aus; Fullscreen bleibt erlaubt |
+
+Die CSP macht die Datenschutz-Zusage **technisch durchsetzbar**: Selbst wenn über eine Backup-Datei oder eine Abhängigkeit fremder Code in die Seite käme, blockiert der Browser jeden Netzwerkzugriff auf fremde Hosts. Nachgewiesen mit einem Test gegen den echten Container: `fetch()` und Bild-Beacons auf externe Domains werden mit `connect-src`- bzw. `img-src`-Verstoss abgewiesen, Inline-Skripte mit `script-src-elem`.
+
+Beim Import einer Backup-Datei werden Bilder strikt auf `image/*` begrenzt und Farben auf `#rrggbb` normalisiert; beschädigte Dateien werden abgelehnt, **bevor** Daten angelegt werden.
+
 ## Lokale Entwicklung
 
 ```bash
@@ -162,7 +185,7 @@ sitzmix/
     ├── vite.config.js
     ├── vitest.config.js
     ├── public/
-    │   └── default-floorplan.png   # Beispiel-Grundriss (Seed)
+    │   └── default-floorplan.webp  # Beispiel-Grundriss (Seed)
     └── src/
         ├── main.jsx                # Entry Point (mountet StoreProvider)
         ├── App.jsx                 # Routing & Toast-Context

@@ -13,6 +13,11 @@ const AREA_COLORS = [
 const GRID_STEP = 2;
 const ALIGN_THRESHOLD = 3;
 
+// Grundriss-Bilder liegen als Blob in der IndexedDB des Browsers und werden
+// unverändert gerendert. Eine Obergrenze bremst versehentliche Riesendateien
+// (z.B. eine irrtümlich gewählte Videodatei), bevor sie den Speicher füllen.
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;   // 15 MB
+
 function snapToGrid(val) {
   return Math.round(val / GRID_STEP) * GRID_STEP;
 }
@@ -156,6 +161,15 @@ export default function RoomEditPage() {
 
   const handleUpload = async (file) => {
     if (!roomId) return;
+    // `accept="image/*"` ist nur ein Hinweis im Dateidialog — hier hart prüfen.
+    if (file.type && !file.type.startsWith('image/')) {
+      showToast('Bitte eine Bilddatei auswählen.', 'error');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      showToast(`Bild ist zu gross (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximal 15 MB.`, 'error');
+      return;
+    }
     setUploading(true);
     try {
       const data = await setFloorplan(roomId, file);
@@ -321,7 +335,7 @@ export default function RoomEditPage() {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={e => e.target.files[0] && handleUpload(e.target.files[0])}
+                  onChange={e => { if (e.target.files[0]) handleUpload(e.target.files[0]); e.target.value = ''; }}
                   disabled={!roomId || uploading}
                 />
               </label>
