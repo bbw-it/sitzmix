@@ -44,6 +44,7 @@ export default function GeneratorPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fillMode, setFillMode] = useState('sequential');
   const [personsPerArea, setPersonsPerArea] = useState(3);
+  const [order, setOrder] = useState('random');   // 'random' | 'alphabetical'
 
   const openLightbox = () => { setLightboxStudentView(true); setLightboxOpen(true); };   // Vollbild standardmässig in Lernenden-Sicht
 
@@ -155,7 +156,7 @@ export default function GeneratorPage() {
     setGenerating(true);
     try {
       // Abwesende bleiben abwesend, auch beim Neu-Mischen.
-      const payload = { classId: selectedClass, roomId: selectedRoom, absentIds: absent.map(s => s.id) };
+      const payload = { classId: selectedClass, roomId: selectedRoom, absentIds: absent.map(s => s.id), order };
       if (selectedRoomHasAreas && fillMode === 'per_area') {
         payload.fillMode = 'per_area';
         payload.personsPerArea = personsPerArea;
@@ -444,6 +445,44 @@ export default function GeneratorPage() {
           </div>
         )}
 
+        {/* Reihenfolge – unabhängig von der Belegungsregel, daher immer sichtbar */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <label className="block text-sm font-bold text-gray-900 mb-2">Reihenfolge</label>
+          <div className="flex flex-wrap items-stretch gap-3">
+            {(() => {
+              const frame = (active) =>
+                `flex items-center gap-2.5 px-4 h-12 rounded-lg border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
+                  active ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`;
+              const radio = (active) => (
+                <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${active ? 'border-lime-600' : 'border-gray-300'}`}>
+                  {active && <span className="w-2 h-2 rounded-full bg-lime-600" />}
+                </span>
+              );
+              const opts = [
+                ['random', 'Zufällig', 'Lernende werden zufällig verteilt'],
+                ['alphabetical', 'Alphabetisch', 'Platz 1 = erste Person alphabetisch, Platz 2 = zweite usw.'],
+              ];
+              return opts.map(([val, label, title]) => {
+                const active = order === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    title={title}
+                    onClick={() => setOrder(val)}
+                    aria-pressed={active}
+                    className={frame(active)}
+                  >
+                    {radio(active)}
+                    {label}
+                  </button>
+                );
+              });
+            })()}
+          </div>
+        </div>
+
         <div className="mt-4 flex gap-3">
           <Button
             variant="primary"
@@ -466,10 +505,18 @@ export default function GeneratorPage() {
                   Nicht alle Regeln eingehalten
                 </span>
               )}
+              {result.success && result.alphabeticalShifts > 0 && (
+                <span
+                  className="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1 rounded-full"
+                  title="Verbotene Paare hätten sonst nebeneinander gesessen — die betroffenen Lernenden sind auf den nächsten zulässigen Platz gerückt."
+                >
+                  Reihenfolge wegen Regeln angepasst
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Button variant="primary" size="sm" onClick={handleGenerate} disabled={generating}>
-                {generating ? 'Generiere…' : 'Neu mischen'}
+                {generating ? 'Generiere…' : (order === 'alphabetical' ? 'Neu berechnen' : 'Neu mischen')}
               </Button>
               <div className="inline-flex items-center rounded-full bg-gray-100 p-1 text-sm" title="Perspektive wechseln (Taste L)">
                 <button

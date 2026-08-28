@@ -5,6 +5,10 @@
  *   "sequential" – Plätze von Nr. 1 her auffüllen, Schüler zufällig verteilen
  *   "per_area"   – Schüler gleichmässig auf Bereiche verteilen
  *
+ * Reihenfolge (Option "order"):
+ *   "random"       – Standard, Lernende werden zufällig verteilt
+ *   "alphabetical" – Platz 1 = erste Person alphabetisch, Platz 2 = zweite usw.
+ *
  * Regeln:
  *   - Verbotene Paare dürfen NICHT im gleichen Bereich (Tisch) sitzen
  *   - Verbotene Paare dürfen NICHT physisch nebeneinander sitzen
@@ -27,6 +31,13 @@ function shuffle(arr) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// Namen nach Schweizer/deutscher Sortierung: "ä" zählt wie "a", "ö" wie "o".
+// Bewusst hier und nicht nur im Aufrufer, damit die Funktion nicht von einer
+// Vorsortierung durch den Store abhängt.
+function sortByName(students) {
+  return [...students].sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
 function buildAdjacencyMap(seats, thresholdPercent = 15) {
@@ -359,19 +370,267 @@ function generatePerAreaPlan(students, seats, rules, areas, personsPerArea, maxS
   };
 }
 
+// ─── Alphabetical Mode ───────────────────────────────────────
+// Platz 1 bekommt die alphabetisch erste Person, Platz 2 die zweite usw.
+// Kein shuffle: die Reihenfolge der Lernenden und der Plätze ist fix.
+//
+// Regeln haben Vorrang. Das Backtracking probiert die Plätze in aufsteigender
+// Platznummer, sodass eine blockierte Person auf den nächsten zulässigen Platz
+// rutscht und die übrigen nachrücken — das Alphabet bricht genau dort und
+// sonst nirgends (lexikografisch erste gültige Belegung).
+//
+// "alphabeticalShifts" zählt, wie viele Lernende dadurch nicht auf ihrem rein
+// alphabetischen Platz sitzen. 0 heisst: exakt A→Z.
+
+// Wie viele Lernende weichen von der regelfreien Wunsch-Belegung ab?
+function countShifts(idealSeatByStudent, assignments) {
+  let shifts = 0;
+  for (const a of assignments) {
+    if (!a.student) continue;
+    const ideal = idealSeatByStudent.get(a.student.id);
+    if (ideal && ideal !== a.seatId) shifts++;
+  }
+  return shifts;
+}
+
+function generateAlphabeticalSequential(students, seats, rules, maxSteps = MAX_STEPS) {
+  const { forbiddenSet } = buildForbiddenData(rules);
+
+  const sortedSeats = [...seats].sort((a, b) => a.seat_number - b.seat_number);
+  const activeSeats = sortedSeats.slice(0, students.length);
+  const inactiveSeats = sortedSeats.slice(students.length);
+
+  const adjacency = buildAdjacencyMap(activeSeats);
+  const ordered = sortByName(students);
+  const assignment = new Array(activeSeats.length).fill(null);
+  let steps = 0;
+
+  // Wunsch-Belegung ohne Regeln: i-te Person auf i-ten Platz.
+  const idealSeatByStudent = new Map();
+  ordered.forEach((s, i) => idealSeatByStudent.set(s.id, activeSeats[i]?.id));
+
+  function isSafe(studentId, seatIdx) {
+    const seat = activeSeats[seatIdx];
+
+    if (seat.area_id) {
+      for (let i = 0; i < activeSeats.length; i++) {
+        if (assignment[i] && activeSeats[i].area_id === seat.area_id) {
+          if (forbiddenSet.has(`${studentId}-${assignment[i].id}`)) return false;
+        }
+      }
+    }
+
+    const neighbors = adjacency.get(seat.id) || new Set();
+    for (let i = 0; i < activeSeats.length; i++) {
+      if (assignment[i] && neighbors.has(activeSeats[i].id)) {
+        if (forbiddenSet.has(`${studentId}-${assignment[i].id}`)) return false;
+      }
+    }
+
+    return true;
+  }
+
+  function backtrack(studentIndex) {
+    if (studentIndex >= ordered.length) return true;
+    for (let seatIdx = 0; seatIdx < activeSeats.length; seatIdx++) {
+      if (++steps > maxSteps) return false;
+      if (assignment[seatIdx]) continue;
+      if (isSafe(ordered[studentIndex].id, seatIdx)) {
+        assignment[seatIdx] = ordered[studentIndex];
+        if (backtrack(studentIndex + 1)) return true;
+        assignment[seatIdx] = null;
+      }
+    }
+    return false;
+  }
+
+  if (!backtrack(0)) {
+    // Budget erschöpft → rein alphabetisch, ohne Regelgarantie
+    return {
+      success: false,
+      warning: 'Nicht alle Regeln konnten eingehalten werden.',
+      alphabeticalShifts: 0,
+      assignments: sortedSeats.map((seat, idx) =>
+        formatSeat(seat, idx < ordered.length ? ordered[idx] : null)
+      ),
+    };
+  }
+
+  const assignments = [
+    ...activeSeats.map((seat, idx) => formatSeat(seat, assignment[idx])),
+    ...inactiveSeats.map(seat => formatSeat(seat)),
+  ];
+
+  return {
+    success: true,
+    alphabeticalShifts: countShifts(idealSeatByStudent, assignments),
+    assignments,
+  };
+}
+
+function generateAlphabeticalPerArea(students, seats, rules, areas, personsPerArea, maxSteps = MAX_STEPS) {
+  const { forbiddenGraph } = buildForbiddenData(rules);
+
+  const seatsByArea = new Map();
+  const unassignedSeats = [];
+  for (const seat of seats) {
+    if (seat.area_id) {
+      if (!seatsByArea.has(seat.area_id)) seatsByArea.set(seat.area_id, []);
+      seatsByArea.get(seat.area_id).push(seat);
+    } else {
+      unassignedSeats.push(seat);
+    }
+  }
+  for (const [, aSeats] of seatsByArea) {
+    aSeats.sort((a, b) => a.seat_number - b.seat_number);
+  }
+
+  const viableAreas = areas.filter(a => (seatsByArea.get(a.id) || []).length > 0);
+  if (viableAreas.length === 0) {
+    return generateAlphabeticalSequential(students, seats, rules, maxSteps);
+  }
+
+  const distribution = computeDistribution(students.length, personsPerArea, viableAreas.length);
+  if (distribution.length === 0) {
+    return generateAlphabeticalSequential(students, seats, rules, maxSteps);
+  }
+
+  const usedAreas = viableAreas.slice(0, distribution.length);
+  for (let i = 0; i < usedAreas.length; i++) {
+    if (distribution[i] > (seatsByArea.get(usedAreas[i].id) || []).length) {
+      return generateAlphabeticalSequential(students, seats, rules, maxSteps);
+    }
+  }
+
+  const adjacency = buildAdjacencyMap(seats);
+  const ordered = sortByName(students);
+  let steps = 0;
+
+  // Wunsch-Belegung ohne Regeln: Alphabet in Blöcke schneiden, Bereiche in
+  // sort_order, Plätze innerhalb des Bereichs nach Platznummer.
+  const idealSeatByStudent = new Map();
+  {
+    let offset = 0;
+    usedAreas.forEach((area, i) => {
+      const aSeats = seatsByArea.get(area.id) || [];
+      for (let k = 0; k < distribution[i]; k++) {
+        idealSeatByStudent.set(ordered[offset + k].id, aSeats[k]?.id);
+      }
+      offset += distribution[i];
+    });
+  }
+
+  // ── Phase 1: Lernende den Bereichen zuteilen ──
+  // Alphabetisch durchgehen, jeweils der früheste Bereich mit freiem Platz, in
+  // dem kein verbotener Partner sitzt. So entstehen zusammenhängende Blöcke.
+  const areaStudents = new Map(usedAreas.map(a => [a.id, []]));
+
+  function assignToAreas(studentIdx) {
+    if (studentIdx >= ordered.length) return true;
+    const student = ordered[studentIdx];
+    const forbidden = forbiddenGraph.get(student.id) || new Set();
+
+    for (let i = 0; i < usedAreas.length; i++) {
+      if (++steps > maxSteps) return false;
+      const current = areaStudents.get(usedAreas[i].id);
+      if (current.length >= distribution[i]) continue;
+      if (current.some(s => forbidden.has(s.id))) continue;
+
+      current.push(student);
+      if (assignToAreas(studentIdx + 1)) return true;
+      current.pop();
+    }
+    return false;
+  }
+
+  if (!assignToAreas(0)) {
+    return {
+      ...generateAlphabeticalSequential(students, seats, rules, maxSteps),
+      warning: 'Bereichs-Verteilung war nicht möglich. Plätze wurden sequentiell vergeben.',
+    };
+  }
+
+  // ── Phase 2: Plätze innerhalb der Bereiche vergeben ──
+  // Alle zu besetzenden Plätze in Bereichs- und Platznummer-Reihenfolge; pro
+  // Platz die alphabetisch früheste noch freie Person des Blocks, die keinen
+  // verbotenen Partner als direkten Nachbarn hat (auch über Tischgrenzen).
+  const slots = [];
+  usedAreas.forEach((area, i) => {
+    const aSeats = seatsByArea.get(area.id) || [];
+    for (let k = 0; k < distribution[i]; k++) slots.push({ seat: aSeats[k], areaId: area.id });
+  });
+
+  const placed = new Map();   // seatId → student
+  const taken = new Set();    // studentIds
+
+  function fillSlots(slotIdx) {
+    if (slotIdx >= slots.length) return true;
+    const { seat, areaId } = slots[slotIdx];
+    const neighbors = adjacency.get(seat.id) || new Set();
+
+    for (const student of areaStudents.get(areaId)) {
+      if (++steps > maxSteps) return false;
+      if (taken.has(student.id)) continue;
+      const forbidden = forbiddenGraph.get(student.id) || new Set();
+      let clash = false;
+      for (const nId of neighbors) {
+        const other = placed.get(nId);
+        if (other && forbidden.has(other.id)) { clash = true; break; }
+      }
+      if (clash) continue;
+
+      placed.set(seat.id, student);
+      taken.add(student.id);
+      if (fillSlots(slotIdx + 1)) return true;
+      placed.delete(seat.id);
+      taken.delete(student.id);
+    }
+    return false;
+  }
+
+  if (!fillSlots(0)) {
+    return {
+      ...generateAlphabeticalSequential(students, seats, rules, maxSteps),
+      warning: 'Bereichs-Verteilung war nicht möglich. Plätze wurden sequentiell vergeben.',
+    };
+  }
+
+  const assignments = [];
+  for (const area of areas) {
+    for (const seat of seatsByArea.get(area.id) || []) {
+      assignments.push(formatSeat(seat, placed.get(seat.id) || null));
+    }
+  }
+  for (const seat of unassignedSeats) assignments.push(formatSeat(seat));
+
+  return {
+    success: true,
+    alphabeticalShifts: countShifts(idealSeatByStudent, assignments),
+    assignments,
+  };
+}
+
 // ─── Entry Point ─────────────────────────────────────────────
 
 function generateSeatingPlan(students, seats, rules, options = {}) {
-  const { areas = [], fillMode = 'sequential', personsPerArea = 0, maxSteps = MAX_STEPS } = options;
+  const { areas = [], fillMode = 'sequential', personsPerArea = 0, maxSteps = MAX_STEPS, order = 'random' } = options;
+  const perArea = fillMode === 'per_area' && areas.length > 0 && personsPerArea > 0;
 
   if (students.length === 0 || seats.length === 0) {
     return {
       success: true,
+      ...(order === 'alphabetical' ? { alphabeticalShifts: 0 } : {}),
       assignments: seats.map(s => formatSeat(s)),
     };
   }
 
-  if (fillMode === 'per_area' && areas.length > 0 && personsPerArea > 0) {
+  if (order === 'alphabetical') {
+    return perArea
+      ? generateAlphabeticalPerArea(students, seats, rules, areas, personsPerArea, maxSteps)
+      : generateAlphabeticalSequential(students, seats, rules, maxSteps);
+  }
+
+  if (perArea) {
     return generatePerAreaPlan(students, seats, rules, areas, personsPerArea, maxSteps);
   }
 

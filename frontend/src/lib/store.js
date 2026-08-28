@@ -279,7 +279,7 @@ export async function getImageUrl(imageId) {
 }
 
 // ── Generieren (läuft vollständig im Browser) ──
-export function generate({ classId, roomId, fillMode, personsPerArea, absentIds }) {
+export function generate({ classId, roomId, fillMode, personsPerArea, absentIds, order }) {
   const c = state.classes.find(x => x.id === classId);
   const r = state.rooms.find(x => x.id === roomId);
   if (!c) throw new Error('Klasse nicht gefunden');
@@ -294,7 +294,7 @@ export function generate({ classId, roomId, fillMode, personsPerArea, absentIds 
     [...present].sort((a, b) => a.name.localeCompare(b.name, 'de')),
     [...r.seats].sort((a, b) => a.seat_number - b.seat_number),
     c.rules,
-    { areas: [...r.areas].sort((a, b) => a.sort_order - b.sort_order), fillMode: fillMode || 'sequential', personsPerArea: parseInt(personsPerArea) || 0 }
+    { areas: [...r.areas].sort((a, b) => a.sort_order - b.sort_order), fillMode: fillMode || 'sequential', personsPerArea: parseInt(personsPerArea) || 0, order: order || 'random' }
   );
   return {
     ...result,

@@ -54,6 +54,9 @@ Damit dabei nichts verloren geht:
 - Zwei Verteilmodi:
   - **Alle Plätze auffüllen** — Lernende werden der Reihe nach auf alle Plätze verteilt.
   - **Pro Bereich** — Lernende werden gleichmässig auf die Tischgruppen verteilt (Anzahl pro Bereich wählbar); verbotene Paare landen nie am selben Tisch und nie direkt nebeneinander.
+- Zwei **Reihenfolgen**:
+  - **Zufällig** — Standard, die Lernenden werden gleichverteilt zufällig platziert.
+  - **Alphabetisch** — Platz 1 bekommt die alphabetisch erste Person, Platz 2 die zweite und so weiter (bei *Pro Bereich* wird das Alphabet in Blöcke geschnitten: Tisch 1 = A–C, Tisch 2 = D–F …). Praktisch für die erste Lektion, für Prüfungen oder zum Namenlernen. Die Regeln gelten weiterhin: Wo ein verbotenes Paar sonst zusammensässe, rückt genau diese eine Person auf den nächsten zulässigen Platz — ein dezenter Hinweis am Plan zeigt an, dass das passiert ist.
 - **Regeln werden eingehalten:** definierte Paare landen weder am selben Tisch noch direkt nebeneinander.
 - **Abwesende markieren:** Lernende mit `×` als abwesend setzen — der Platz wird frei, die Person erscheint in einer immer sichtbaren Leiste oben. Beim **Neu mischen** bleiben Abwesende abwesend. Zurückholen per Klick (nächster freier Platz) oder per Drag auf einen freien Platz.
 - **Manuell umordnen:** Lernende per **Drag & Drop** verschieben oder tauschen, mit klarem visuellem Feedback.

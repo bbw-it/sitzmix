@@ -178,3 +178,91 @@ describe('search budget', () => {
     expect(res.assignments.filter(a => a.student)).toHaveLength(students.length);
   });
 });
+
+// ── Alphabetische Reihenfolge ──────────────────────────────────
+// Modus "alphabetical": Platz 1 bekommt die alphabetisch erste Person, Platz 2
+// die zweite usw. Regeln haben Vorrang — das Alphabet bricht nur dort, wo ein
+// verbotenes Paar sonst am selben Tisch oder direkt nebeneinander sässe.
+describe('alphabetical order', () => {
+  // Eine Reihe von 6 Plätzen; benachbarte Plätze liegen innerhalb der
+  // Nachbarschaftsschwelle (15%), entfernte nicht.
+  const ROW = Array.from({ length: 6 }, (_, i) => ({
+    id: `r${i}`, seat_number: i + 1, x_position: 10 + i * 12, y_position: 50, area_id: null,
+  }));
+  const names = (res) =>
+    [...res.assignments]
+      .sort((a, b) => a.seatNumber - b.seatNumber)
+      .map(a => a.student?.name ?? null);
+
+  const mk = (...ns) => ns.map((n, i) => ({ id: `st${i}`, name: n, color: '#fff' }));
+
+  it('fills seats in alphabetical order when there are no rules', () => {
+    const studs = mk('Delia', 'Bruno', 'Anna', 'Carla');
+    const res = generateSeatingPlan(studs, ROW, [], { order: 'alphabetical' });
+    expect(res.success).toBe(true);
+    expect(names(res)).toEqual(['Anna', 'Bruno', 'Carla', 'Delia', null, null]);
+    expect(res.alphabeticalShifts).toBe(0);
+  });
+
+  it('sorts umlauts by German locale (ä like a, ö like o)', () => {
+    const studs = mk('Berger', 'Ärni', 'Zwahlen', 'Zöllig');
+    const res = generateSeatingPlan(studs, ROW, [], { order: 'alphabetical' });
+    expect(names(res).slice(0, 4)).toEqual(['Ärni', 'Berger', 'Zöllig', 'Zwahlen']);
+  });
+
+  it('is deterministic across runs', () => {
+    const studs = mk('Delia', 'Bruno', 'Anna', 'Carla', 'Enzo');
+    const rules = [{ student_a_id: 'st2', student_b_id: 'st1' }];   // Anna – Bruno
+    const a = generateSeatingPlan(studs, ROW, rules, { order: 'alphabetical' });
+    const b = generateSeatingPlan(studs, ROW, rules, { order: 'alphabetical' });
+    expect(names(a)).toEqual(names(b));
+  });
+
+  it('keeps a forbidden pair apart and shifts only the blocked person', () => {
+    const studs = mk('Anna', 'Bruno', 'Carla', 'Delia');
+    const rules = [{ student_a_id: 'st0', student_b_id: 'st1' }];   // Anna – Bruno
+    const res = generateSeatingPlan(studs, ROW, rules, { order: 'alphabetical' });
+    expect(res.success).toBe(true);
+    const order = names(res);
+    // Anna behält Platz 1; Bruno weicht auf den ersten nicht benachbarten Platz aus.
+    expect(order[0]).toBe('Anna');
+    expect(order[1]).not.toBe('Bruno');
+    const seatOf = (n) => res.assignments.find(a => a.student?.name === n);
+    const adj = buildAdjacencyMap(ROW);
+    expect(adj.get(seatOf('Anna').seatId).has(seatOf('Bruno').seatId)).toBe(false);
+    expect(res.alphabeticalShifts).toBeGreaterThan(0);
+  });
+
+  it('cuts the alphabet into blocks per area (per_area)', () => {
+    const areas = [
+      { id: 'a1', sort_order: 0, x_pos: 0, y_pos: 0, width_pct: 20, height_pct: 20 },
+      { id: 'a2', sort_order: 1, x_pos: 60, y_pos: 0, width_pct: 20, height_pct: 20 },
+    ];
+    // Zwei weit auseinanderliegende Tische à 2 Plätze
+    const tables = [
+      { id: 't1', seat_number: 1, x_position: 5, y_position: 10, area_id: 'a1' },
+      { id: 't2', seat_number: 2, x_position: 15, y_position: 10, area_id: 'a1' },
+      { id: 't3', seat_number: 3, x_position: 80, y_position: 10, area_id: 'a2' },
+      { id: 't4', seat_number: 4, x_position: 90, y_position: 10, area_id: 'a2' },
+    ];
+    const studs = mk('Delia', 'Bruno', 'Anna', 'Carla');
+    const res = generateSeatingPlan(studs, tables, [], {
+      areas, fillMode: 'per_area', personsPerArea: 2, order: 'alphabetical',
+    });
+    expect(res.success).toBe(true);
+    const at = (n) => res.assignments.find(a => a.student?.name === n).areaId;
+    expect(at('Anna')).toBe('a1');
+    expect(at('Bruno')).toBe('a1');
+    expect(at('Carla')).toBe('a2');
+    expect(at('Delia')).toBe('a2');
+    expect(names(res)).toEqual(['Anna', 'Bruno', 'Carla', 'Delia']);
+  });
+
+  it('leaves the random mode untouched', () => {
+    const studs = mk('Anna', 'Bruno', 'Carla', 'Delia');
+    // Ohne order-Option muss sich über viele Läufe mehr als eine Anordnung zeigen.
+    const seen = new Set();
+    for (let i = 0; i < 60; i++) seen.add(names(generateSeatingPlan(studs, ROW, [])).join('|'));
+    expect(seen.size).toBeGreaterThan(1);
+  });
+});
