@@ -93,7 +93,8 @@ Ergänzungen in `frontend/src/lib/seatingAlgorithm.test.js`:
 1. Ohne Regeln, Modus „Alle Plätze auffüllen": Platz 1..n tragen exakt die
    alphabetisch sortierten Namen.
 2. Determinismus: zwei Läufe mit gleicher Eingabe liefern identische Belegungen.
-3. Umlaute: `Ärni` steht vor `Berger`, `Zöllig` nach `Zwahlen` gemäss `de`-Locale.
+3. Umlaute: `Ärni` steht vor `Berger` und `Zöllig` vor `Zwahlen` (`de`-Locale sortiert
+   `ö` wie `o`, nicht ans Alphabet-Ende).
 4. Eine Regel auf zwei Nachbarplätzen: Regel eingehalten **und** höchstens die
    betroffenen Personen weichen von der reinen Reihenfolge ab.
 5. Modus „Pro Bereich": Bereich 1 enthält den ersten alphabetischen Block,
