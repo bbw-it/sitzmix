@@ -14,9 +14,14 @@ export default function ExportModal({ onClose }) {
   const [roomsExpanded, setRoomsExpanded] = useState(true);
   const [exporting, setExporting] = useState(false);
 
+  // Standardmässig alles ausgewählt – der Export dient meist als vollständige Sicherung
   useEffect(() => {
-    setClasses(listClasses());
-    setRooms(listRooms());
+    const allClasses = listClasses();
+    const allRooms = listRooms();
+    setClasses(allClasses);
+    setRooms(allRooms);
+    setSelectedClassIds(new Set(allClasses.map(c => c.id)));
+    setSelectedRoomIds(new Set(allRooms.map(r => r.id)));
   }, []);
 
   const toggleClass = (id) => {
