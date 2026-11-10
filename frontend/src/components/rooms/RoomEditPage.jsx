@@ -297,8 +297,8 @@ export default function RoomEditPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Zimmer bearbeiten</h1>
+      <div className="flex items-center justify-between mb-10">
+        <h1 className="text-3xl sm:text-[34px] font-semibold tracking-tight">Zimmer bearbeiten</h1>
         <div className="flex items-center gap-3">
           {isDirty && (
             <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
@@ -314,10 +314,10 @@ export default function RoomEditPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-9 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">Bezeichnung</label>
+            <label className="block text-[13px] font-semibold text-gray-600 mb-2.5">Bezeichnung</label>
             <input
               type="text"
               value={name}
@@ -327,7 +327,7 @@ export default function RoomEditPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">Grundriss</label>
+            <label className="block text-[13px] font-semibold text-gray-600 mb-2.5">Grundriss</label>
             <div className="flex gap-2 flex-wrap">
               <label className={`${buttonClasses({ variant: 'outline' })} cursor-pointer ${(!roomId || uploading) ? 'opacity-40 cursor-not-allowed' : ''}`}>
                 {uploading ? 'Lade…' : 'Bild auswählen'}
@@ -355,7 +355,7 @@ export default function RoomEditPage() {
       </div>
 
       {roomId && room?.floorplan_image_path && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-9">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden">
@@ -460,7 +460,7 @@ export default function RoomEditPage() {
       )}
 
       {roomId && !room?.floorplan_image_path && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center">
+        <div className="bg-gray-100/70 rounded-2xl p-12 text-center">
           <p className="text-gray-400">Lade ein Grundriss-Bild hoch, um Sitzplätze zu positionieren.</p>
         </div>
       )}

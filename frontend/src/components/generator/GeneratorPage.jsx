@@ -358,12 +358,15 @@ export default function GeneratorPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Sitzplan Generator</h1>
+      <header className="mb-10">
+        <h1 className="text-3xl sm:text-[34px] font-semibold tracking-tight">Sitzplan Generator</h1>
+        <p className="mt-2.5 text-base leading-relaxed text-gray-500 max-w-[52ch]">Klasse und Zimmer wählen, Belegung festlegen – SitzMix verteilt die Lernenden neu.</p>
+      </header>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-9 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">Klasse</label>
+            <label className="block text-[13px] font-semibold text-gray-600 mb-2.5">Klasse</label>
             <SearchableSelect
               value={selectedClass}
               onChange={handleClassChange}
@@ -372,7 +375,7 @@ export default function GeneratorPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">Zimmer</label>
+            <label className="block text-[13px] font-semibold text-gray-600 mb-2.5">Zimmer</label>
             <SearchableSelect
               value={selectedRoom}
               onChange={handleRoomChange}
@@ -384,12 +387,12 @@ export default function GeneratorPage() {
 
         {/* Fill mode selector (only when room has areas) */}
         {selectedRoomHasAreas && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <label className="block text-sm font-bold text-gray-900 mb-2">Belegungsregel</label>
-            <div className="flex flex-wrap items-stretch gap-3">
+          <div className="mt-8">
+            <label className="block text-[13px] font-semibold text-gray-600 mb-2.5">Belegungsregel</label>
+            <div className="flex flex-wrap items-stretch gap-2.5">
               {(() => {
                 const frame = (active) =>
-                  `flex items-center gap-2.5 px-4 h-12 rounded-lg border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
+                  `flex items-center gap-2.5 px-4 h-12 rounded-[10px] border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
                     active ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`;
                 const radio = (active) => (
@@ -446,12 +449,12 @@ export default function GeneratorPage() {
         )}
 
         {/* Reihenfolge – unabhängig von der Belegungsregel, daher immer sichtbar */}
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <label className="block text-sm font-bold text-gray-900 mb-2">Reihenfolge</label>
-          <div className="flex flex-wrap items-stretch gap-3">
+        <div className="mt-8">
+          <label className="block text-[13px] font-semibold text-gray-600 mb-2.5">Reihenfolge</label>
+          <div className="flex flex-wrap items-stretch gap-2.5">
             {(() => {
               const frame = (active) =>
-                `flex items-center gap-2.5 px-4 h-12 rounded-lg border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
+                `flex items-center gap-2.5 px-4 h-12 rounded-[10px] border text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-500 focus-visible:ring-offset-1 ${
                   active ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`;
               const radio = (active) => (
@@ -483,7 +486,7 @@ export default function GeneratorPage() {
           </div>
         </div>
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-9 flex gap-3">
           <Button
             variant="primary"
             onClick={handleGenerate}
@@ -495,8 +498,8 @@ export default function GeneratorPage() {
       </div>
 
       {result && result.room && (
-        <div ref={resultRef} className="bg-white border border-gray-200 rounded-xl px-6 pb-6 scroll-mt-4">
-          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur -mx-6 px-6 pt-5 pb-3 mb-4 border-b border-gray-100 rounded-t-xl">
+        <div ref={resultRef} className="bg-white border border-gray-200 rounded-2xl px-6 sm:px-9 pb-6 sm:pb-9 scroll-mt-4">
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur -mx-6 sm:-mx-9 px-6 sm:px-9 pt-7 pb-5 mb-6 border-b border-gray-200 rounded-t-2xl">
            <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold">{className} – {roomName}</h2>
@@ -545,7 +548,7 @@ export default function GeneratorPage() {
              </div>
            )}
           </div>
-          <div ref={planRef} className="relative bg-gray-100 rounded-lg overflow-hidden">
+          <div ref={planRef} className="relative bg-gray-100 rounded-xl overflow-hidden">
             {renderSeatingPlan('normal')}
             <button
               onClick={openLightbox}
@@ -555,15 +558,15 @@ export default function GeneratorPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5" /></svg>
             </button>
           </div>
-          <p className="mt-3 text-xs text-gray-400">
+          <p className="mt-5 text-xs text-gray-500">
             Tipp: Lernende per Drag &amp; Drop verschieben · <span className="text-gray-500">×</span> markiert abwesend · Taste <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">L</kbd> wechselt die Perspektive · <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded text-[10px] font-mono">F</kbd> öffnet das Vollbild.
           </p>
         </div>
       )}
 
       {!result && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-16 text-center">
-          <p className="text-gray-400 text-lg">Wähle eine Klasse und ein Zimmer, um einen Sitzplan zu generieren.</p>
+        <div className="bg-gray-100/70 rounded-2xl p-16 text-center">
+          <p className="text-gray-500 text-lg">Wähle eine Klasse und ein Zimmer, um einen Sitzplan zu generieren.</p>
         </div>
       )}
 

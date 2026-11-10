@@ -14,10 +14,10 @@ export default function Navbar() {
   const gearRef = useRef(null);
 
   const linkClass = ({ isActive }) =>
-    `px-3 py-2 text-sm font-medium transition-colors ${
+    `relative px-3 py-2 text-sm font-medium transition-colors ${
       isActive
-        ? 'text-lime-600 border-b-2 border-lime-500'
-        : 'text-gray-600 hover:text-gray-900'
+        ? 'text-gray-900 after:absolute after:left-3 after:right-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-lime-500'
+        : 'text-gray-500 hover:text-gray-900'
     }`;
 
   // Close gear dropdown on outside click
@@ -38,9 +38,9 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white border-b border-gray-200">
+      <nav>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-[76px]">
             <NavLink to="/" className="flex items-center gap-2">
               <span className="text-xl font-bold">
                 <span className="text-lime-600">Sitz</span>
@@ -49,7 +49,7 @@ export default function Navbar() {
             </NavLink>
 
             {/* Desktop nav */}
-            <div className="hidden sm:flex items-center gap-1">
+            <div className="hidden sm:flex items-center gap-2">
               <NavLink to="/generator" className={linkClass}>Generator</NavLink>
               <NavLink to="/classes" className={linkClass}>Klassen verwalten</NavLink>
               <NavLink to="/rooms" className={linkClass}>Zimmer verwalten</NavLink>

@@ -13,6 +13,19 @@
   --color-lime-800: #445d14;
   --color-lime-900: #3a4f16;
   --color-lime-950: #1e2b06;
+
+  /* Getönte Neutrale: jede Graustufe nimmt einen Hauch der Markenfarbe auf.
+     Weil sie auf die lime-Skala verweisen, folgen sie jedem Theme automatisch. */
+  --color-gray-50:  color-mix(in oklab, var(--color-lime-50) 45%, #fbfbfa);
+  --color-gray-100: color-mix(in oklab, var(--color-lime-100) 22%, #f3f4f6);
+  --color-gray-200: color-mix(in oklab, var(--color-lime-900) 7%, #e5e7eb);
+  --color-gray-300: color-mix(in oklab, var(--color-lime-900) 9%, #d1d5db);
+  --color-gray-400: color-mix(in oklab, var(--color-lime-800) 25%, #9ca3af);
+  --color-gray-500: color-mix(in oklab, var(--color-lime-900) 30%, #6b7280);
+  --color-gray-600: color-mix(in oklab, var(--color-lime-900) 32%, #4b5563);
+  --color-gray-700: color-mix(in oklab, var(--color-lime-950) 40%, #374151);
+  --color-gray-800: color-mix(in oklab, var(--color-lime-950) 45%, #1f2937);
+  --color-gray-900: color-mix(in oklab, var(--color-lime-950) 55%, #111827);
 }
 
 :root {
@@ -59,6 +72,10 @@
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply text-gray-900 antialiased;
   font-family: var(--app-font);
+  /* Ein Hauch Markenfarbe läuft oben im Seitengrund aus */
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--color-lime-50) 70%, transparent) 0, transparent 420px) no-repeat,
+    var(--color-gray-50);
 }

@@ -58,7 +58,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
   return (
     <div ref={containerRef} className="relative">
       <div
-        className="w-full border border-gray-300 rounded-lg flex items-center cursor-text focus-within:ring-2 focus-within:ring-lime-500 focus-within:border-transparent"
+        className="w-full bg-white border border-gray-300 rounded-[10px] flex items-center cursor-text focus-within:ring-2 focus-within:ring-lime-500 focus-within:border-transparent"
         onClick={() => inputRef.current?.focus()}
       >
         <input
@@ -69,7 +69,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full px-4 py-2.5 rounded-lg text-sm bg-transparent outline-none"
+          className="w-full px-4 py-3 rounded-[10px] text-[15px] bg-transparent outline-none"
         />
         <div className="pr-3 text-gray-400 pointer-events-none">
           <svg className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +79,7 @@ export default function SearchableSelect({ value, onChange, options, placeholder
       </div>
 
       {open && (
-        <div className="absolute z-40 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-40 mt-1 w-full bg-white border border-gray-200 rounded-[10px] shadow-lg max-h-60 overflow-y-auto">
           {filtered.length === 0 ? (
             <div className="px-4 py-3 text-sm text-gray-400 italic">Keine Treffer</div>
           ) : (

@@ -132,8 +132,8 @@ export default function ClassEditPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Klasse bearbeiten</h1>
+      <div className="flex items-center justify-between mb-10">
+        <h1 className="text-3xl sm:text-[34px] font-semibold tracking-tight">Klasse bearbeiten</h1>
         <div className="flex items-center gap-3">
           {isDirty && (
             <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
@@ -149,8 +149,8 @@ export default function ClassEditPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <label className="block text-sm font-bold text-gray-900 mb-2">Klassen-Bezeichnung</label>
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-9 mb-8">
+        <label className="block text-[13px] font-semibold text-gray-600 mb-2.5">Klassen-Bezeichnung</label>
         <input
           type="text"
           value={name}
@@ -195,7 +195,7 @@ export default function ClassEditPage() {
                     <p className="text-gray-400 italic">Keine Lernenden vorhanden.</p>
                   </div>
                 ) : (
-                  <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+                  <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
                     {[...students].sort((a, b) => a.name.localeCompare(b.name, 'de')).map(s => (
                       <div key={s.id} className="flex items-center justify-between px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -221,7 +221,7 @@ export default function ClassEditPage() {
 
               {/* Add students */}
               <div className="lg:col-span-2">
-                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="bg-white border border-gray-200 rounded-2xl px-6 py-5">
                   <h3 className="font-bold mb-2">Lernende hinzufügen</h3>
                   <p className="text-xs text-gray-500 mb-3">
                     Füge einen oder mehrere Namen ein, getrennt durch Zeilenumbruch, Komma oder Semikolon.
@@ -256,7 +256,7 @@ export default function ClassEditPage() {
                     <p className="text-gray-400 italic">Keine Regeln definiert.</p>
                   </div>
                 ) : (
-                  <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+                  <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
                     {rules.map(r => (
                       <div key={r.id} className="flex items-center justify-between px-4 py-3">
                         <div className="flex items-center gap-2 text-sm">
@@ -282,7 +282,7 @@ export default function ClassEditPage() {
 
               {/* Add rule */}
               <div className="lg:col-span-2">
-                <div className="bg-white border border-gray-200 rounded-xl p-5">
+                <div className="bg-white border border-gray-200 rounded-2xl px-6 py-5">
                   <h3 className="font-bold mb-2">Regel hinzufügen</h3>
                   <p className="text-xs text-gray-500 mb-4">
                     Wähle zwei Lernende aus, die <strong>nicht nebeneinander</strong> sitzen sollen.

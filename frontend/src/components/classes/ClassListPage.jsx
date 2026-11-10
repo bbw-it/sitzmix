@@ -40,8 +40,8 @@ export default function ClassListPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Klassen verwalten</h1>
+      <div className="flex items-center justify-between mb-10">
+        <h1 className="text-3xl sm:text-[34px] font-semibold tracking-tight">Klassen verwalten</h1>
         <Button variant="secondary" onClick={handleCreate}>
           + Neue Klasse
         </Button>
@@ -55,7 +55,7 @@ export default function ClassListPage() {
       ) : (
         <div className="space-y-4">
           {classes.map(cls => (
-            <div key={cls.id} className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between">
+            <div key={cls.id} className="bg-white border border-gray-200 rounded-2xl px-6 py-5 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold">{cls.name}</h3>
                 <p className="text-sm mt-0.5">

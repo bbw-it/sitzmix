@@ -30,7 +30,7 @@ export default function App() {
     <ToastContext.Provider value={showToast}>
       <div className="min-h-screen">
         <Navbar />
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-24">
           <Routes>
             <Route path="/" element={<Navigate to="/generator" replace />} />
             <Route path="/generator" element={<GeneratorPage />} />
