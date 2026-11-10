@@ -8,6 +8,7 @@ export default function ClassListPage() {
   const { listClasses, createClass, deleteClass } = useStore();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('');
   const navigate = useNavigate();
   const showToast = useContext(ToastContext);
 
@@ -38,6 +39,11 @@ export default function ClassListPage() {
 
   if (loading) return <div className="text-center py-12 text-gray-500">Laden...</div>;
 
+  const query = filter.trim().toLowerCase();
+  const visibleClasses = query
+    ? classes.filter(cls => cls.name.toLowerCase().includes(query))
+    : classes;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-10">
@@ -54,7 +60,18 @@ export default function ClassListPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {classes.map(cls => (
+          <input
+            type="search"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="Klassen filtern …"
+            aria-label="Klassen filtern"
+            className="w-full bg-white border border-gray-300 rounded-[10px] px-4 py-3 text-[15px] outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+          />
+          {visibleClasses.length === 0 && (
+            <p className="text-center py-8 text-sm text-gray-400 italic">Keine Klasse gefunden.</p>
+          )}
+          {visibleClasses.map(cls => (
             <div key={cls.id} className="bg-white border border-gray-200 rounded-2xl px-6 py-5 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold">{cls.name}</h3>

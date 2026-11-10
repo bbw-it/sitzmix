@@ -147,7 +147,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <PrivacyBanner />
+      <PrivacyBanner onExport={openExport} />
 
       {showTheme && <ThemeModal onClose={() => setShowTheme(false)} />}
       {showExport && <ExportModal onClose={() => setShowExport(false)} />}

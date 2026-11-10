@@ -404,16 +404,6 @@ export default function GeneratorPage() {
                 const areaActive = fillMode === 'per_area';
                 return (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => setFillMode('sequential')}
-                      aria-pressed={seqActive}
-                      className={frame(seqActive)}
-                    >
-                      {radio(seqActive)}
-                      Alle Plätze auffüllen
-                    </button>
-
                     <div
                       role="button"
                       tabIndex={0}
@@ -441,6 +431,16 @@ export default function GeneratorPage() {
                         </span>
                       )}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setFillMode('sequential')}
+                      aria-pressed={seqActive}
+                      className={frame(seqActive)}
+                    >
+                      {radio(seqActive)}
+                      Alle Plätze auffüllen
+                    </button>
                   </>
                 );
               })()}
